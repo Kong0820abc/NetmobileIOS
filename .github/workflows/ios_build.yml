@@ -13,7 +13,7 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Set up JDK 17
-      uses: actions/setup-java@v4
+      uses: actions/setup-java@v5
       with:
         java-version: '17'
         distribution: 'zulu'
@@ -32,8 +32,8 @@ jobs:
         use_modular_headers!
         
         target 'iosApp' do
-          # 核心修复 1：保持动态框架，但在 CI 环境下强制开启全模块化
-          use_frameworks!
+          # 核心修复 1：改用静态链接，避免动态库在无签名构建时的加载和链接问题
+          use_frameworks! :linkage => :static
           pod 'FirebaseDatabase'
           pod 'FirebaseCore'
           pod 'FirebaseCoreInternal'
@@ -44,6 +44,10 @@ jobs:
           installer.pods_project.targets.each do |target|
             target.build_configurations.each do |config|
               config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
+              # 核心修复 2：强制禁用所有 Pod 依赖的签名，防止 leveldb 等库链接失败
+              config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
+              config.build_settings['CODE_SIGNING_REQUIRED'] = 'NO'
+              config.build_settings['CODE_SIGN_IDENTITY'] = ''
               config.build_settings['DEFINES_MODULE'] = 'YES'
               config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
             end
@@ -66,7 +70,6 @@ jobs:
     - name: Build and Archive iOS App
       run: |
         cd iosApp
-        # Use absolute paths for framework search to avoid relative path confusion in CI
         FRAMEWORK_PATH="$GITHUB_WORKSPACE/shared/build/bin/iosArm64/releaseFramework"
         
         xcodebuild -workspace iosApp.xcworkspace \
@@ -81,7 +84,7 @@ jobs:
                    ENABLE_USER_SCRIPT_SANDBOXING=NO \
                    IS_APPLE_CODE_SIGN_PARAMETER_REQUIRED=NO \
                    FRAMEWORK_SEARCH_PATHS="\$(inherited) $FRAMEWORK_PATH" \
-                   OTHER_LDFLAGS="\$(inherited) -framework Shared -ObjC" \
+                   OTHER_LDFLAGS="\$(inherited) -ObjC" \
                    SWIFT_INCLUDE_PATHS="\$(inherited) $FRAMEWORK_PATH" \
                    CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES=YES \
                    OTHER_SWIFT_FLAGS="\$(inherited) -Xcc -Wno-error=non-modular-include-in-framework-module"
