@@ -53,15 +53,19 @@ jobs:
     - name: Build iOS App (Unsigned)
       run: |
         cd iosApp
-        # 自动获取真实的 Scheme 名称（解决 Turf Mobile vs iosApp 的命名冲突）
+        # 自动获取真实的 Scheme 名称
         SCHEME_NAME=$(xcodebuild -workspace iosApp.xcworkspace -list | grep -A 10 "Schemes:" | tail -n +2 | xargs | cut -d ' ' -f 1)
         echo "Detected Scheme: $SCHEME_NAME"
+        
+        # 强制将编译结果输出到根目录下的 output 文件夹，避开复杂的层级和空格问题
+        mkdir -p ../build_output
         
         xcodebuild -workspace iosApp.xcworkspace \
                    -scheme "$SCHEME_NAME" \
                    -sdk iphoneos \
                    -configuration Release \
                    -derivedDataPath build \
+                   CONFIGURATION_BUILD_DIR=$(pwd)/../build_output \
                    CODE_SIGNING_ALLOWED=NO \
                    CODE_SIGNING_REQUIRED=NO \
                    CODE_SIGNING_IDENTITY="" \
@@ -72,12 +76,9 @@ jobs:
                    FRAMEWORK_SEARCH_PATHS="$(pwd)/../shared/build/bin/iosArm64/releaseFramework" \
                    build
 
-    - name: List Build Directory
-      run: find iosApp/build -name "*.app"
-
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v4
       with:
         name: ios-app-unsigned
-        path: iosApp/build/Build/Products/Release-iphoneos/*.app
+        path: build_output/*.app
         if-no-files-found: error
