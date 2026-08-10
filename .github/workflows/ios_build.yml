@@ -27,12 +27,12 @@ jobs:
         cd iosApp
         cat <<EOF > Podfile
         platform :ios, '15.0'
-        # 核心修复 1：开启全局模块化头文件，解决 GoogleUtilities 找不到的问题
+        
+        # 核心修复：强制开启模块化，确保 Swift 能找到 ObjC 模块
         use_modular_headers!
         
         target 'iosApp' do
-          # 核心修复 2：使用静态链接，这是目前处理 Firebase + KMP 无签名构建最稳妥的方式
-          use_frameworks! :linkage => :static
+          use_frameworks!
           pod 'FirebaseDatabase'
           pod 'FirebaseCore'
           pod 'GoogleUtilities'
@@ -44,6 +44,8 @@ jobs:
               target.build_configurations.each do |config|
                 config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
                 config.build_settings['ENABLE_BITCODE'] = 'NO'
+                # 显式允许非模块化包含，双重保险
+                config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
                 config.build_settings['DEFINES_MODULE'] = 'YES'
               end
             end
@@ -58,12 +60,8 @@ jobs:
     - name: Build iOS App (Unsigned)
       run: |
         cd iosApp
-        SCHEME_NAME=$(xcodebuild -workspace iosApp.xcworkspace -list | grep -v "Schemes:" | grep -A 20 "Information about workspace" | grep -v "Information about workspace" | grep -v "Pods-" | grep -v "Firebase" | grep -v "Google" | grep -v "nanopb" | grep -v "leveldb" | grep -v "Promises" | xargs | cut -d ' ' -f 1)
-        if [ -z "$SCHEME_NAME" ] || [ "$SCHEME_NAME" = "Schemes:" ]; then SCHEME_NAME="iosApp"; fi
-        echo "Final Targeting App Scheme: $SCHEME_NAME"
-
         xcodebuild -workspace iosApp.xcworkspace \
-                   -scheme "$SCHEME_NAME" \
+                   -scheme iosApp \
                    -sdk iphoneos \
                    -configuration Release \
                    -derivedDataPath build_data \
@@ -75,15 +73,15 @@ jobs:
                    COMPILER_INDEX_STORE_ENABLE=NO \
                    IS_APPLE_CODE_SIGN_PARAMETER_REQUIRED=NO \
                    FRAMEWORK_SEARCH_PATHS="$(pwd)/../shared/build/bin/iosArm64/releaseFramework" \
-                   SWIFT_COMPILATION_MODE=wholemodule \
+                   CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES=YES \
                    build
 
     - name: Prepare Artifact for Upload
       run: |
         mkdir -p final_ipa_dir
-        # 深度扫描并提取真正的 .app
-        find . -name "*.app" -type d -not -path "*/Pods/*" -exec cp -R "{}" final_ipa_dir/ \;
-        echo "Final result captured:"
+        # 深度扫描并提取真正的 .app，确保不包含 Pods 目录下的临时编译物
+        find build_data -name "*.app" -type d -path "*/Release-iphoneos/*" -exec cp -R "{}" final_ipa_dir/ \;
+        echo "Final result content:"
         ls -R final_ipa_dir
 
     - name: Upload Build Artifact
