@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "842587854447",
+    "firebase_url": "https://update-8c26e-default-rtdb.firebaseio.com",
+    "project_id": "update-8c26e",
+    "storage_bucket": "update-8c26e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:842587854447:android:e66b4fbacd1da6def4df9a",
+        "android_client_info": {
+          "package_name": "com.xyz.netmobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDpELu-__va0rkVIA5UkWzPNXeSnPJkBHA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
