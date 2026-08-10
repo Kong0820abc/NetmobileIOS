@@ -22,9 +22,6 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    - name: Build with Gradle
-      run: ./gradlew :shared:assembleRelease
-
     - name: Build iOS App (Unsigned)
       run: |
         cd iosApp
@@ -32,11 +29,13 @@ jobs:
                    -scheme iosApp \
                    -sdk iphoneos \
                    -configuration Release \
+                   -derivedDataPath build \
                    CODE_SIGNING_ALLOWED=NO \
+                   CODE_SIGNING_REQUIRED=NO \
                    build
 
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v4
       with:
         name: ios-app-unsigned
-        path: iosApp/build/Release-iphoneos/iosApp.app
+        path: iosApp/build/Build/Products/Release-iphoneos/iosApp.app
