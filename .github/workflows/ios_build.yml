@@ -40,6 +40,9 @@ jobs:
               target.build_configurations.each do |config|
                 config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
                 config.build_settings['ENABLE_BITCODE'] = 'NO'
+                config.build_settings['APPLICATION_EXTENSION_API_ONLY'] = 'NO'
+                config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
+                config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
               end
             end
           end
@@ -50,48 +53,41 @@ jobs:
     - name: Build Kotlin Framework
       run: ./gradlew :shared:linkReleaseFrameworkIosArm64
 
-    - name: Build iOS App (Unsigned)
+    - name: Build iOS App (Unsigned Archive)
       run: |
         cd iosApp
         SCHEME_NAME=$(xcodebuild -workspace iosApp.xcworkspace -list | grep -A 10 "Schemes:" | tail -n +2 | xargs | cut -d ' ' -f 1)
         echo "Detected Scheme: $SCHEME_NAME"
         
-        mkdir -p ../build_output
-        
+        # 使用 archive 模式，这是 iOS 打包的标准方式，路径 100% 可控
         xcodebuild -workspace iosApp.xcworkspace \
                    -scheme "$SCHEME_NAME" \
-                   -sdk iphoneos \
                    -configuration Release \
-                   -derivedDataPath build \
-                   CONFIGURATION_BUILD_DIR=$(pwd)/../build_output \
+                   -archivePath build/Netmobile.xcarchive \
+                   archive \
                    CODE_SIGNING_ALLOWED=NO \
                    CODE_SIGNING_REQUIRED=NO \
                    CODE_SIGNING_IDENTITY="" \
                    AD_HOC_CODE_SIGNING_ALLOWED=YES \
                    ENABLE_USER_SCRIPT_SANDBOXING=NO \
-                   COMPILER_INDEX_STORE_ENABLE=NO \
                    IS_APPLE_CODE_SIGN_PARAMETER_REQUIRED=NO \
-                   FRAMEWORK_SEARCH_PATHS="$(pwd)/../shared/build/bin/iosArm64/releaseFramework" \
-                   build
+                   FRAMEWORK_SEARCH_PATHS="$(pwd)/../shared/build/bin/iosArm64/releaseFramework"
 
     - name: Prepare Artifact for Upload
       run: |
-        # 1. 扫描所有 .app 文件并打印路径（调试用）
-        echo "Searching for built apps..."
-        find . -name "*.app" -type d
+        # 1. 创建确定的上传目录
+        mkdir -p final_output
         
-        # 2. 创建一个纯净的上传目录
-        mkdir -p final_app_dir
+        # 2. 从归档包中定点提取 .app 文件夹
+        # 路径在 Archive 模式下是固定的：Products/Applications/
+        cp -R iosApp/build/Netmobile.xcarchive/Products/Applications/*.app final_output/
         
-        # 3. 将找到的所有 .app 文件拷贝过去，并去掉路径中的空格隐患
-        find . -name "*.app" -type d -exec cp -R {} final_app_dir/ \;
-        
-        # 4. 确认目录内容
-        ls -R final_app_dir
+        # 3. 确认文件是否存在
+        ls -R final_output
 
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v4
       with:
         name: ios-app-unsigned
-        path: final_app_dir/
+        path: final_output/
         if-no-files-found: error
