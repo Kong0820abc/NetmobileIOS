@@ -76,4 +76,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ios-app-unsigned
-        path: iosApp/build/Build/Products/Release-iphoneos/*.app
+        path: iosApp/build/**/*.app
+        if-no-files-found: error
