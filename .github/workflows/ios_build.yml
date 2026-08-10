@@ -53,46 +53,46 @@ jobs:
     - name: Build Kotlin Framework
       run: ./gradlew :shared:linkReleaseFrameworkIosArm64
 
-    - name: Build iOS App (Unsigned Archive)
+    - name: Build iOS App (Unsigned)
       run: |
         cd iosApp
         SCHEME_NAME=$(xcodebuild -workspace iosApp.xcworkspace -list | grep -A 10 "Schemes:" | tail -n +2 | xargs | cut -d ' ' -f 1)
         echo "Detected Scheme: $SCHEME_NAME"
         
-        # 使用 archive 模式，这是 iOS 打包的标准方式，路径 100% 可控
+        # 强制指定输出目录到当前文件夹下的 'output'，彻底解决找不到路径的问题
+        mkdir -p build_results
+        
         xcodebuild -workspace iosApp.xcworkspace \
                    -scheme "$SCHEME_NAME" \
                    -configuration Release \
-                   -archivePath build/Netmobile.xcarchive \
-                   archive \
+                   -sdk iphoneos \
+                   -derivedDataPath derived_data \
+                   CONFIGURATION_BUILD_DIR=$(pwd)/build_results \
                    CODE_SIGNING_ALLOWED=NO \
                    CODE_SIGNING_REQUIRED=NO \
                    CODE_SIGNING_IDENTITY="" \
                    AD_HOC_CODE_SIGNING_ALLOWED=YES \
                    ENABLE_USER_SCRIPT_SANDBOXING=NO \
+                   COMPILER_INDEX_STORE_ENABLE=NO \
                    IS_APPLE_CODE_SIGN_PARAMETER_REQUIRED=NO \
-                   FRAMEWORK_SEARCH_PATHS="$(pwd)/../shared/build/bin/iosArm64/releaseFramework"
+                   FRAMEWORK_SEARCH_PATHS="$(pwd)/../shared/build/bin/iosArm64/releaseFramework" \
+                   build
 
     - name: Prepare Artifact for Upload
       run: |
-        # 1. 创建确定的上传目录
-        mkdir -p final_output
+        mkdir -p final_payload
         
-        # 2. 深度搜索归档包内的所有 .app 文件夹并打印出来（调试用）
-        echo "Searching for the app inside the archive..."
-        find iosApp/build/Netmobile.xcarchive -name "*.app" -type d
+        # 找到所有名为 *.app 的文件夹并拷贝（无论在哪里）
+        # 重点：这一次搜索整个工作区根目录
+        find . -name "*.app" -type d -not -path "./shared/*" -exec cp -R "{}" final_payload/ \;
         
-        # 3. 强力提取：找到第一个 .app 并拷贝到 final_output
-        # 使用 -exec 配合引处理带空格的文件名
-        find iosApp/build/Netmobile.xcarchive -name "*.app" -type d -exec cp -R "{}" final_output/ \;
-        
-        # 4. 确认提取结果
-        echo "Final output content:"
-        ls -R final_output
+        # 打印出来看看抓到了什么
+        echo "Apps captured for upload:"
+        ls -R final_payload
 
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v4
       with:
         name: ios-app-unsigned
-        path: final_output/
+        path: final_payload/
         if-no-files-found: error
