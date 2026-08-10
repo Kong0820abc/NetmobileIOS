@@ -40,9 +40,6 @@ jobs:
               target.build_configurations.each do |config|
                 config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
                 config.build_settings['ENABLE_BITCODE'] = 'NO'
-                config.build_settings['APPLICATION_EXTENSION_API_ONLY'] = 'NO'
-                config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
-                config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
               end
             end
           end
@@ -56,18 +53,21 @@ jobs:
     - name: Build iOS App (Unsigned)
       run: |
         cd iosApp
-        SCHEME_NAME=$(xcodebuild -workspace iosApp.xcworkspace -list | grep -A 10 "Schemes:" | tail -n +2 | xargs | cut -d ' ' -f 1)
-        echo "Detected Scheme: $SCHEME_NAME"
+        # 强制排除 Firebase 和 Pods 相关的 Scheme，只锁定 App 的主方案
+        SCHEME_NAME=$(xcodebuild -workspace iosApp.xcworkspace -list | grep -A 20 "Schemes:" | grep -v "Pods-" | grep -v "Firebase" | grep -v "Google" | grep -v "nanopb" | grep -v "leveldb" | head -n 1 | xargs)
         
-        # 强制指定输出目录到当前文件夹下的 'output'，彻底解决找不到路径的问题
-        mkdir -p build_results
+        # 如果自动检测失败，强制指定默认值
+        if [ -z "$SCHEME_NAME" ]; then SCHEME_NAME="iosApp"; fi
+        echo "Successfully Targeted App Scheme: $SCHEME_NAME"
+        
+        mkdir -p ../build_results
         
         xcodebuild -workspace iosApp.xcworkspace \
                    -scheme "$SCHEME_NAME" \
                    -configuration Release \
                    -sdk iphoneos \
                    -derivedDataPath derived_data \
-                   CONFIGURATION_BUILD_DIR=$(pwd)/build_results \
+                   CONFIGURATION_BUILD_DIR=$(pwd)/../build_results \
                    CODE_SIGNING_ALLOWED=NO \
                    CODE_SIGNING_REQUIRED=NO \
                    CODE_SIGNING_IDENTITY="" \
@@ -81,13 +81,9 @@ jobs:
     - name: Prepare Artifact for Upload
       run: |
         mkdir -p final_payload
-        
-        # 找到所有名为 *.app 的文件夹并拷贝（无论在哪里）
-        # 重点：这一次搜索整个工作区根目录
-        find . -name "*.app" -type d -not -path "./shared/*" -exec cp -R "{}" final_payload/ \;
-        
-        # 打印出来看看抓到了什么
-        echo "Apps captured for upload:"
+        # 现在路径绝对正确了：从结果目录中提取真正的 .app
+        find build_results -name "*.app" -type d -exec cp -R "{}" final_payload/ \;
+        echo "Archive Summary:"
         ls -R final_payload
 
     - name: Upload Build Artifact
