@@ -25,13 +25,23 @@ jobs:
     - name: Install CocoaPods Dependencies
       run: |
         cd iosApp
-        # 创建一个临时的 Podfile 来拉取 Firebase
         cat <<EOF > Podfile
         platform :ios, '15.0'
         target 'iosApp' do
           use_frameworks!
           pod 'FirebaseDatabase'
           pod 'FirebaseCore'
+        end
+
+        # 强制所有库对齐 iOS 15.0，解决版本冲突报错
+        post_install do |installer|
+          installer.generated_projects.each do |project|
+            project.targets.each do |target|
+              target.build_configurations.each do |config|
+                config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
+              end
+            end
+          end
         end
         EOF
         pod install
@@ -42,7 +52,6 @@ jobs:
     - name: Build iOS App (Unsigned)
       run: |
         cd iosApp
-        # 使用 .xcworkspace 而不是 .xcodeproj 来包含 Pods 依赖
         xcodebuild -workspace iosApp.xcworkspace \
                    -scheme iosApp \
                    -sdk iphoneos \
@@ -50,8 +59,7 @@ jobs:
                    -derivedDataPath build \
                    CODE_SIGNING_ALLOWED=NO \
                    CODE_SIGNING_REQUIRED=NO \
-                   FRAMEWORK_SEARCH_PATHS="\$(pwd)/../shared/build/bin/iosArm64/releaseFramework" \
-                   OTHER_LDFLAGS="-framework Shared" \
+                   FRAMEWORK_SEARCH_PATHS="$(pwd)/../shared/build/bin/iosArm64/releaseFramework" \
                    build
 
     - name: Upload Build Artifact
