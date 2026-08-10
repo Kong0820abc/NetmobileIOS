@@ -22,50 +22,18 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    - name: Install CocoaPods Dependencies
-      run: |
-        cd iosApp
-        rm -rf Pods Podfile.lock iosApp.xcworkspace
-        
-        cat <<EOF > Podfile
-        platform :ios, '15.0'
-        # 强制开启模块化支持
-        use_modular_headers!
-        
-        target 'iosApp' do
-          # 回归标准动态链接，但配合 post_install 强力修复
-          use_frameworks!
-          pod 'FirebaseDatabase'
-          pod 'FirebaseCore'
-          pod 'GoogleUtilities'
-        end
-
-        post_install do |installer|
-          installer.generated_projects.each do |project|
-            project.targets.each do |target|
-              target.build_configurations.each do |config|
-                # 修复 FirebaseCoreInternal 找不到 GoogleUtilities 的核心配置
-                config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
-                config.build_settings['DEFINES_MODULE'] = 'YES'
-                config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
-                config.build_settings['ONLY_ACTIVE_ARCH'] = 'NO'
-              end
-            end
-          end
-        end
-        EOF
-        pod install --repo-update
-
     - name: Build Kotlin Framework
       run: ./gradlew :shared:linkReleaseFrameworkIosArm64
 
-    - name: Build iOS App (Unsigned)
+    - name: Build iOS App using SPM (Safe Mode)
       run: |
         cd iosApp
-        # 直接使用探测到的 iosApp 方案
-        xcodebuild -workspace iosApp.xcworkspace \
+        # 彻底跳过 CocoaPods，使用 Xcode 16 内置的依赖管理
+        # 这种方式不会产生 "no such module GoogleUtilities" 错误
+        
+        xcodebuild -project iosApp.xcodeproj \
                    -scheme iosApp \
-                   -destination 'generic/platform=iOS' \
+                   -sdk iphoneos \
                    -configuration Release \
                    -derivedDataPath build_data \
                    CODE_SIGNING_ALLOWED=NO \
@@ -76,16 +44,14 @@ jobs:
                    COMPILER_INDEX_STORE_ENABLE=NO \
                    IS_APPLE_CODE_SIGN_PARAMETER_REQUIRED=NO \
                    FRAMEWORK_SEARCH_PATHS="$(pwd)/../shared/build/bin/iosArm64/releaseFramework" \
-                   CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES=YES \
-                   OTHER_SWIFT_FLAGS="-Xcc -Wno-error=non-modular-include-in-framework-module" \
                    build
 
     - name: Prepare Artifact for Upload
       run: |
         mkdir -p final_ipa_dir
-        # 提取结果，排除掉干扰目录
+        # 定位真正的编译结果
         find build_data -name "*.app" -type d -path "*/Release-iphoneos/*" -exec cp -R "{}" final_ipa_dir/ \;
-        echo "Final Apps Captured:"
+        echo "Apps found for download:"
         ls -R final_ipa_dir
 
     - name: Upload Build Artifact
