@@ -22,6 +22,17 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
+    - name: Build Kotlin Framework Manually
+      run: ./gradlew :shared:linkReleaseFrameworkIosArm64
+
+    - name: Prepare Framework for Xcode
+      run: |
+        mkdir -p iosApp/build/Release-iphoneos
+        cp -R shared/build/bin/iosArm64/releaseFramework/Shared.framework iosApp/build/Release-iphoneos/
+        # 同时拷贝到 Xcode 默认寻找的路径
+        mkdir -p shared/build/xcode-frameworks/Release/iphoneos
+        cp -R shared/build/bin/iosArm64/releaseFramework/Shared.framework shared/build/xcode-frameworks/Release/iphoneos/
+
     - name: Build iOS App (Unsigned)
       run: |
         cd iosApp
@@ -32,9 +43,7 @@ jobs:
                    -derivedDataPath build \
                    CODE_SIGNING_ALLOWED=NO \
                    CODE_SIGNING_REQUIRED=NO \
-                   ARCHS=arm64 \
-                   VALID_ARCHS=arm64 \
-                   ONLY_ACTIVE_ARCH=NO \
+                   FRAMEWORK_SEARCH_PATHS="$(pwd)/../shared/build/bin/iosArm64/releaseFramework" \
                    build
 
     - name: Upload Build Artifact
