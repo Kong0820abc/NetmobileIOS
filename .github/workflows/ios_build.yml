@@ -53,11 +53,9 @@ jobs:
     - name: Build iOS App (Unsigned)
       run: |
         cd iosApp
-        # 自动获取真实的 Scheme 名称
         SCHEME_NAME=$(xcodebuild -workspace iosApp.xcworkspace -list | grep -A 10 "Schemes:" | tail -n +2 | xargs | cut -d ' ' -f 1)
         echo "Detected Scheme: $SCHEME_NAME"
         
-        # 强制将编译结果输出到根目录下的 output 文件夹，避开复杂的层级和空格问题
         mkdir -p ../build_output
         
         xcodebuild -workspace iosApp.xcworkspace \
@@ -76,9 +74,24 @@ jobs:
                    FRAMEWORK_SEARCH_PATHS="$(pwd)/../shared/build/bin/iosArm64/releaseFramework" \
                    build
 
+    - name: Prepare Artifact for Upload
+      run: |
+        # 1. 扫描所有 .app 文件并打印路径（调试用）
+        echo "Searching for built apps..."
+        find . -name "*.app" -type d
+        
+        # 2. 创建一个纯净的上传目录
+        mkdir -p final_app_dir
+        
+        # 3. 将找到的所有 .app 文件拷贝过去，并去掉路径中的空格隐患
+        find . -name "*.app" -type d -exec cp -R {} final_app_dir/ \;
+        
+        # 4. 确认目录内容
+        ls -R final_app_dir
+
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v4
       with:
         name: ios-app-unsigned
-        path: build_output/*.app
+        path: final_app_dir/
         if-no-files-found: error
