@@ -78,11 +78,16 @@ jobs:
         # 1. 创建确定的上传目录
         mkdir -p final_output
         
-        # 2. 从归档包中定点提取 .app 文件夹
-        # 路径在 Archive 模式下是固定的：Products/Applications/
-        cp -R iosApp/build/Netmobile.xcarchive/Products/Applications/*.app final_output/
+        # 2. 深度搜索归档包内的所有 .app 文件夹并打印出来（调试用）
+        echo "Searching for the app inside the archive..."
+        find iosApp/build/Netmobile.xcarchive -name "*.app" -type d
         
-        # 3. 确认文件是否存在
+        # 3. 强力提取：找到第一个 .app 并拷贝到 final_output
+        # 使用 -exec 配合引处理带空格的文件名
+        find iosApp/build/Netmobile.xcarchive -name "*.app" -type d -exec cp -R "{}" final_output/ \;
+        
+        # 4. 确认提取结果
+        echo "Final output content:"
         ls -R final_output
 
     - name: Upload Build Artifact
