@@ -32,7 +32,7 @@ jobs:
         use_modular_headers!
         
         target 'iosApp' do
-          # 核心修复 1：回归动态框架模式，提高 CI 环境下的链接稳定性
+          # 核心修复 1：保持动态框架，但在 CI 环境下强制开启全模块化
           use_frameworks!
           pod 'FirebaseDatabase'
           pod 'FirebaseCore'
@@ -44,7 +44,6 @@ jobs:
           installer.pods_project.targets.each do |target|
             target.build_configurations.each do |config|
               config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
-              config.build_settings['ENABLE_BITCODE'] = 'NO'
               config.build_settings['DEFINES_MODULE'] = 'YES'
               config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
             end
@@ -59,7 +58,8 @@ jobs:
     - name: Build and Archive iOS App
       run: |
         cd iosApp
-        # 核心修复 2：不再手动覆盖搜索路径，让 Xcode 通过 workspace 自动继承 CocoaPods 路径
+        # 核心修复 2：在路径中包含 \$(inherited)，防止覆盖掉 CocoaPods 的搜索路径
+        # 同时增加 -ObjC 标志确保静态库符号被正确链接
         xcodebuild -workspace iosApp.xcworkspace \
                    -scheme iosApp \
                    -configuration Release \
@@ -71,12 +71,14 @@ jobs:
                    AD_HOC_CODE_SIGNING_ALLOWED=YES \
                    ENABLE_USER_SCRIPT_SANDBOXING=NO \
                    IS_APPLE_CODE_SIGN_PARAMETER_REQUIRED=NO \
-                   CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES=YES
+                   FRAMEWORK_SEARCH_PATHS="\$(inherited) \$(pwd)/../shared/build/bin/iosArm64/releaseFramework" \
+                   OTHER_LDFLAGS="\$(inherited) -framework Shared -ObjC" \
+                   CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES=YES \
+                   OTHER_SWIFT_FLAGS="\$(inherited) -Xcc -Wno-error=non-modular-include-in-framework-module"
 
     - name: Extract App from Archive
       run: |
         mkdir -p final_output
-        # 稳健寻找生成的 .app
         APP_PATH=\$(find iosApp/build/App.xcarchive -name "*.app" -type d | head -n 1)
         if [ -n "\$APP_PATH" ]; then
           cp -R "\$APP_PATH" final_output/
