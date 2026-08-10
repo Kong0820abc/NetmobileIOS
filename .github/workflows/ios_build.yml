@@ -53,12 +53,13 @@ jobs:
     - name: Build iOS App (Unsigned)
       run: |
         cd iosApp
-        # 强制排除 Firebase 和 Pods 相关的 Scheme，只锁定 App 的主方案
-        SCHEME_NAME=$(xcodebuild -workspace iosApp.xcworkspace -list | grep -A 20 "Schemes:" | grep -v "Pods-" | grep -v "Firebase" | grep -v "Google" | grep -v "nanopb" | grep -v "leveldb" | head -n 1 | xargs)
+        # 深度修正的 Scheme 提取逻辑：过滤掉标题行、Pods 和 Firebase 相关的干扰项
+        SCHEME_NAME=$(xcodebuild -workspace iosApp.xcworkspace -list | grep -v "Schemes:" | grep -A 20 "Information about workspace" | grep -v "Information about workspace" | grep -v "Pods-" | grep -v "Firebase" | grep -v "Google" | grep -v "nanopb" | grep -v "leveldb" | grep -v "Promises" | xargs | cut -d ' ' -f 1)
         
-        # 如果自动检测失败，强制指定默认值
-        if [ -z "$SCHEME_NAME" ]; then SCHEME_NAME="iosApp"; fi
-        echo "Successfully Targeted App Scheme: $SCHEME_NAME"
+        # 如果自动检测落空，则强制指定
+        if [ -z "$SCHEME_NAME" ] || [ "$SCHEME_NAME" = "Schemes:" ]; then SCHEME_NAME="iosApp"; fi
+        
+        echo "Final Targeting App Scheme: $SCHEME_NAME"
         
         mkdir -p ../build_results
         
