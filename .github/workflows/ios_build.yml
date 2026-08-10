@@ -22,13 +22,6 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    - name: Build Kotlin Shared Framework
-      env:
-        ARCHS: arm64
-        SDK_NAME: iphoneos
-        CONFIGURATION: Release
-      run: ./gradlew :shared:assembleReleaseAppleFrameworkForXcode
-
     - name: Build iOS App (Unsigned)
       run: |
         cd iosApp
@@ -39,9 +32,16 @@ jobs:
                    -derivedDataPath build \
                    CODE_SIGNING_ALLOWED=NO \
                    CODE_SIGNING_REQUIRED=NO \
-                   OBJROOT=$(pwd)/build \
-                   SYMROOT=$(pwd)/build \
-                   clean build
+                   ARCHS=arm64 \
+                   VALID_ARCHS=arm64 \
+                   ONLY_ACTIVE_ARCH=NO \
+                   build
+
+    - name: Upload Build Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ios-app-unsigned
+        path: iosApp/build/Build/Products/Release-iphoneos/*.app
 
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v4
