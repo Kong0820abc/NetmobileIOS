@@ -22,28 +22,36 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    - name: Build Kotlin Framework Manually
-      run: ./gradlew :shared:linkReleaseFrameworkIosArm64
-
-    - name: Prepare Framework for Xcode
+    - name: Install CocoaPods Dependencies
       run: |
-        mkdir -p iosApp/build/Release-iphoneos
-        cp -R shared/build/bin/iosArm64/releaseFramework/Shared.framework iosApp/build/Release-iphoneos/
-        # 同时拷贝到 Xcode 默认寻找的路径
-        mkdir -p shared/build/xcode-frameworks/Release/iphoneos
-        cp -R shared/build/bin/iosArm64/releaseFramework/Shared.framework shared/build/xcode-frameworks/Release/iphoneos/
+        cd iosApp
+        # 创建一个临时的 Podfile 来拉取 Firebase
+        cat <<EOF > Podfile
+        platform :ios, '15.0'
+        target 'iosApp' do
+          use_frameworks!
+          pod 'FirebaseDatabase'
+          pod 'FirebaseCore'
+        end
+        EOF
+        pod install
+
+    - name: Build Kotlin Framework
+      run: ./gradlew :shared:linkReleaseFrameworkIosArm64
 
     - name: Build iOS App (Unsigned)
       run: |
         cd iosApp
-        xcodebuild -project iosApp.xcodeproj \
+        # 使用 .xcworkspace 而不是 .xcodeproj 来包含 Pods 依赖
+        xcodebuild -workspace iosApp.xcworkspace \
                    -scheme iosApp \
                    -sdk iphoneos \
                    -configuration Release \
                    -derivedDataPath build \
                    CODE_SIGNING_ALLOWED=NO \
                    CODE_SIGNING_REQUIRED=NO \
-                   FRAMEWORK_SEARCH_PATHS="$(pwd)/../shared/build/bin/iosArm64/releaseFramework" \
+                   FRAMEWORK_SEARCH_PATHS="\$(pwd)/../shared/build/bin/iosArm64/releaseFramework" \
+                   OTHER_LDFLAGS="-framework Shared" \
                    build
 
     - name: Upload Build Artifact
