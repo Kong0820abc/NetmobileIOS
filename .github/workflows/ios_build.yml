@@ -55,11 +55,20 @@ jobs:
     - name: Build Kotlin Framework
       run: ./gradlew :shared:linkReleaseFrameworkIosArm64
 
+    - name: Verify Kotlin Framework
+      run: |
+        ls -R shared/build/bin/iosArm64/releaseFramework
+        if [ ! -d "shared/build/bin/iosArm64/releaseFramework/Shared.framework" ]; then
+          echo "Error: Shared.framework not found!"
+          exit 1
+        fi
+
     - name: Build and Archive iOS App
       run: |
         cd iosApp
-        # 核心修复 2：在路径中包含 \$(inherited)，防止覆盖掉 CocoaPods 的搜索路径
-        # 同时增加 -ObjC 标志确保静态库符号被正确链接
+        # Use absolute paths for framework search to avoid relative path confusion in CI
+        FRAMEWORK_PATH="$GITHUB_WORKSPACE/shared/build/bin/iosArm64/releaseFramework"
+        
         xcodebuild -workspace iosApp.xcworkspace \
                    -scheme iosApp \
                    -configuration Release \
@@ -71,8 +80,9 @@ jobs:
                    AD_HOC_CODE_SIGNING_ALLOWED=YES \
                    ENABLE_USER_SCRIPT_SANDBOXING=NO \
                    IS_APPLE_CODE_SIGN_PARAMETER_REQUIRED=NO \
-                   FRAMEWORK_SEARCH_PATHS="\$(inherited) \$(pwd)/../shared/build/bin/iosArm64/releaseFramework" \
+                   FRAMEWORK_SEARCH_PATHS="\$(inherited) $FRAMEWORK_PATH" \
                    OTHER_LDFLAGS="\$(inherited) -framework Shared -ObjC" \
+                   SWIFT_INCLUDE_PATHS="\$(inherited) $FRAMEWORK_PATH" \
                    CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES=YES \
                    OTHER_SWIFT_FLAGS="\$(inherited) -Xcc -Wno-error=non-modular-include-in-framework-module"
 
