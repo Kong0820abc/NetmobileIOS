@@ -23,7 +23,11 @@ jobs:
       run: chmod +x gradlew
 
     - name: Build Kotlin Shared Framework
-      run: ./gradlew :shared:embedAndSignAppleFrameworkForXcode
+      env:
+        ARCHS: arm64
+        SDK_NAME: iphoneos
+        CONFIGURATION: Release
+      run: ./gradlew :shared:assembleReleaseAppleFrameworkForXcode
 
     - name: Build iOS App (Unsigned)
       run: |
@@ -35,6 +39,8 @@ jobs:
                    -derivedDataPath build \
                    CODE_SIGNING_ALLOWED=NO \
                    CODE_SIGNING_REQUIRED=NO \
+                   OBJROOT=$(pwd)/build \
+                   SYMROOT=$(pwd)/build \
                    clean build
 
     - name: Upload Build Artifact
