@@ -69,12 +69,11 @@ jobs:
     - name: Build and Archive iOS App
       run: |
         cd iosApp
-        # 核心改进：
-        # 1. 使用 PROJECT_DIR 变量引用当前目录下的 Shared.framework
-        # 2. 移除 OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED，让 Xcode 脚本运行（它会发现没啥可做的或者自动处理嵌入）
-        # 3. 显式添加 -lc++ 和 -lz，防止 Firebase/leveldb 链接时丢失基础库
-        # 4. 增加详细日志输出，如果失败则打印最后 200 行
+        # 获取 KMP 框架的绝对路径
+        FRAMEWORK_DIR="$GITHUB_WORKSPACE/shared/build/bin/iosArm64/releaseFramework"
         
+        # 使用 tee 记录日志，如果失败则精准抓取 ld 错误
+        set -o pipefail
         xcodebuild -workspace iosApp.xcworkspace \
                    -scheme iosApp \
                    -configuration Release \
@@ -86,13 +85,12 @@ jobs:
                    AD_HOC_CODE_SIGNING_ALLOWED=YES \
                    ENABLE_USER_SCRIPT_SANDBOXING=NO \
                    ARCHS=arm64 \
-                   FRAMEWORK_SEARCH_PATHS="\$(inherited) \$(PROJECT_DIR)" \
+                   FRAMEWORK_SEARCH_PATHS="\$(inherited) '$FRAMEWORK_DIR'" \
                    OTHER_LDFLAGS="\$(inherited) -framework Shared -ObjC -lc++ -lz -lsqlite3" \
-                   SWIFT_INCLUDE_PATHS="\$(inherited) \$(PROJECT_DIR)" \
+                   SWIFT_INCLUDE_PATHS="\$(inherited) '$FRAMEWORK_DIR'" \
                    CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES=YES \
                    COMPILER_INDEX_STORE_ENABLE=NO \
-                   SKIP_INSTALL=NO \
-                   > xcodebuild.log 2>&1 || (tail -n 200 xcodebuild.log && exit 1)
+                   SKIP_INSTALL=NO 2>&1 | tee xcodebuild.log || (echo "Linker error detected! Full log trace:" && grep -i "ld: " xcodebuild.log || tail -n 100 xcodebuild.log && exit 1)
 
     - name: Extract App from Archive
       run: |
