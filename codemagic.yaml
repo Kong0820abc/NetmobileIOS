@@ -9,8 +9,7 @@ workflows:
       vars:
         XCODE_WORKSPACE: "iosApp/iosApp.xcworkspace"
         XCODE_SCHEME: "iosApp"
-      node: latest
-      ruby: latest
+      node: 20
       java: 17
       xcode: latest
     scripts:
