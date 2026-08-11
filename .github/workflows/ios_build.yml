@@ -29,9 +29,10 @@ jobs:
         
         cat <<EOF > Podfile
         platform :ios, '15.0'
+        use_modular_headers!
         
         target 'iosApp' do
-          # 强制使用静态框架，这是 KMP 的推荐做法
+          # 静态链接最稳定
           use_frameworks! :linkage => :static
           pod 'FirebaseDatabase'
           pod 'FirebaseCore'
@@ -55,6 +56,8 @@ jobs:
                 config.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
                 config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
                 config.build_settings['GCC_WARN_INHIBIT_ALL_WARNINGS'] = 'YES'
+                # 为所有 Pods 也开启经典链接器
+                config.build_settings['OTHER_LDFLAGS'] ||= ['$(inherited)', '-Wl,-ld64']
               end
             end
           end
@@ -70,7 +73,7 @@ jobs:
         cd iosApp
         set -o pipefail
         
-        # 使用 -Xlinker -no_warn_duplicate_libraries 解决 SwiftUICore 链接权限问题
+        # 显式使用 -Wl,-ld64 解决 Xcode 16 的 SwiftUICore 链接权限问题
         xcodebuild -workspace iosApp.xcworkspace \
                    -scheme iosApp \
                    -configuration Release \
@@ -81,9 +84,9 @@ jobs:
                    CODE_SIGNING_IDENTITY="" \
                    AD_HOC_CODE_SIGNING_ALLOWED=YES \
                    ENABLE_USER_SCRIPT_SANDBOXING=NO \
-                   OTHER_LDFLAGS="\$(inherited) -Xlinker -no_warn_duplicate_libraries" \
+                   OTHER_LDFLAGS="\$(inherited) -Wl,-ld64" \
                    COMPILER_INDEX_STORE_ENABLE=NO \
-                   SKIP_INSTALL=NO 2>&1 | tee xcodebuild.log || (echo "Linker error details:" && grep -i "ld: " xcodebuild.log | head -n 20 && exit 1)
+                   SKIP_INSTALL=NO 2>&1 | tee xcodebuild.log || (echo "Linker error details:" && grep -i "ld: " xcodebuild.log | head -n 30 && exit 1)
 
     - name: Extract App from Archive
       run: |

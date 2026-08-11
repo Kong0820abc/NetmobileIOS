@@ -6,7 +6,7 @@ PRODUCT_BUNDLE_IDENTIFIER=com.xyz.netmobile.NetmobileIOS$(TEAM_ID)
 CURRENT_PROJECT_VERSION=5
 MARKETING_VERSION=5.0.0
 
-// 核心修复：添加 -Xlinker 标志以跳过 Xcode 16 的严格库校验
-FRAMEWORK_SEARCH_PATHS = $(inherited) "$(PROJECT_DIR)/../shared/build/bin/iosArm64/releaseFramework"
-OTHER_LDFLAGS = $(inherited) -framework Shared -ObjC -Xlinker -no_warn_duplicate_libraries
-SWIFT_INCLUDE_PATHS = $(inherited) "$(PROJECT_DIR)/../shared/build/bin/iosArm64/releaseFramework"
+// 核心修复 1：切换到经典链接器 (-Wl,-ld64)，解决 Xcode 16 的 SwiftUICore 链接错误
+FRAMEWORK_SEARCH_PATHS = $(inherited) "$(SRCROOT)/../shared/build/bin/iosArm64/releaseFramework"
+OTHER_LDFLAGS = $(inherited) -framework Shared -ObjC -Wl,-ld64
+SWIFT_INCLUDE_PATHS = $(inherited) "$(SRCROOT)/../shared/build/bin/iosArm64/releaseFramework"
