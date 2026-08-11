@@ -6,7 +6,7 @@ PRODUCT_BUNDLE_IDENTIFIER=com.xyz.netmobile.NetmobileIOS$(TEAM_ID)
 CURRENT_PROJECT_VERSION=5
 MARKETING_VERSION=5.0.0
 
-// 通用路径：这在本地 Mac 和 Codemagic 上都是有效的
-FRAMEWORK_SEARCH_PATHS = $(inherited) "$(SRCROOT)/../shared/build/bin/iosArm64/releaseFramework"
+// 适配模拟器构建：指向 iosSimulatorArm64 目录
+FRAMEWORK_SEARCH_PATHS = $(inherited) "$(SRCROOT)/../shared/build/bin/iosSimulatorArm64/releaseFramework"
 OTHER_LDFLAGS = $(inherited) -framework Shared -ObjC
-SWIFT_INCLUDE_PATHS = $(inherited) "$(SRCROOT)/../shared/build/bin/iosArm64/releaseFramework"
+SWIFT_INCLUDE_PATHS = $(inherited) "$(SRCROOT)/../shared/build/bin/iosSimulatorArm64/releaseFramework"
