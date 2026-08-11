@@ -5,8 +5,3 @@ PRODUCT_BUNDLE_IDENTIFIER=com.xyz.netmobile.NetmobileIOS$(TEAM_ID)
 
 CURRENT_PROJECT_VERSION=5
 MARKETING_VERSION=5.0.0
-
-// 核心修复：直接在配置文件中指定 KMP 框架路径
-FRAMEWORK_SEARCH_PATHS = $(inherited) "$(PROJECT_DIR)/../shared/build/bin/iosArm64/releaseFramework"
-OTHER_LDFLAGS = $(inherited) -framework Shared -ObjC
-SWIFT_INCLUDE_PATHS = $(inherited) "$(PROJECT_DIR)/../shared/build/bin/iosArm64/releaseFramework"
