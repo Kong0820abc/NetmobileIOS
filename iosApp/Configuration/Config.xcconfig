@@ -6,7 +6,7 @@ PRODUCT_BUNDLE_IDENTIFIER=com.xyz.netmobile.NetmobileIOS$(TEAM_ID)
 CURRENT_PROJECT_VERSION=5
 MARKETING_VERSION=5.0.0
 
-// 核心修复 1：切换到经典链接器 (-Wl,-ld64)，解决 Xcode 16 的 SwiftUICore 链接错误
+// 通用路径：这在本地 Mac 和 Codemagic 上都是有效的
 FRAMEWORK_SEARCH_PATHS = $(inherited) "$(SRCROOT)/../shared/build/bin/iosArm64/releaseFramework"
-OTHER_LDFLAGS = $(inherited) -framework Shared -ObjC -Wl,-ld64
+OTHER_LDFLAGS = $(inherited) -framework Shared -ObjC
 SWIFT_INCLUDE_PATHS = $(inherited) "$(SRCROOT)/../shared/build/bin/iosArm64/releaseFramework"

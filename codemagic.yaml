@@ -1,0 +1,51 @@
+workflows:
+  ios-unsigned-workflow:
+    name: iOS Unsigned Build
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      groups:
+        - sdk_versions
+      vars:
+        XCODE_WORKSPACE: "iosApp/iosApp.xcworkspace"
+        XCODE_SCHEME: "iosApp"
+      node: latest
+      ruby: latest
+      java: 17
+      xcode: latest
+    scripts:
+      - name: Set execute permission for gradlew
+        script: chmod +x gradlew
+      - name: Install CocoaPods
+        script: |
+          cd iosApp
+          pod install
+      - name: Build KMP Framework
+        script: |
+          ./gradlew :shared:linkReleaseFrameworkIosArm64
+      - name: Build iOS App
+        script: |
+          # 核心修复：使用经典链接器解决 Xcode 16 兼容性问题
+          xcodebuild build -workspace "$XCODE_WORKSPACE" \
+            -scheme "$XCODE_SCHEME" \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_IDENTITY="" \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES \
+            ENABLE_USER_SCRIPT_SANDBOXING=NO \
+            OTHER_LDFLAGS="\$(inherited) -ObjC -Wl,-ld64" \
+            COMPILER_INDEX_STORE_ENABLE=NO
+    artifacts:
+      - iosApp/build/ios/iphoneos/*.app
+      - build/ios/iphoneos/*.app
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/Products/Release-iphoneos/*.app
+    publishing:
+      email:
+        recipients:
+          - kong0820kong0820@gmail.com # 构建完成后会发邮件通知你
+        notify:
+          success: true
+          failure: true
