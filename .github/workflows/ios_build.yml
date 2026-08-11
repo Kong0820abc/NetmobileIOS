@@ -29,9 +29,9 @@ jobs:
         
         cat <<EOF > Podfile
         platform :ios, '15.0'
-        use_modular_headers!
         
         target 'iosApp' do
+          # 强制使用静态框架，这是 KMP 的推荐做法
           use_frameworks! :linkage => :static
           pod 'FirebaseDatabase'
           pod 'FirebaseCore'
@@ -40,23 +40,22 @@ jobs:
         end
 
         post_install do |installer|
-          installer.pods_project.targets.each do |target|
-            target.build_configurations.each do |config|
-              config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
-              config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
-              config.build_settings['CODE_SIGNING_REQUIRED'] = 'NO'
-              config.build_settings['CODE_SIGN_IDENTITY'] = ''
-              config.build_settings['DEFINES_MODULE'] = 'YES'
-              config.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
-              config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
-              config.build_settings['GCC_WARN_INHIBIT_ALL_WARNINGS'] = 'YES'
-            end
-          end
-          # 核心修复：手动将 GoogleUtilities 的框架路径注入主 Target，解决 UIUtilities 找不到的问题
-          installer.aggregate_targets.each do |target|
-            target.xcconfigs.each do |name, config|
-              config.attributes['FRAMEWORK_SEARCH_PATHS'] ||= '$(inherited)'
-              config.attributes['FRAMEWORK_SEARCH_PATHS'] << ' $(PODS_CONFIGURATION_BUILD_DIR)/GoogleUtilities'
+          # 修复 Xcode 16 下 Pods 项目的构建设置
+          installer.generated_projects.each do |project|
+            project.targets.each do |target|
+              target.build_configurations.each do |config|
+                # 统一所有 Pods 的部署版本
+                config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
+                # 禁用签名
+                config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
+                config.build_settings['CODE_SIGNING_REQUIRED'] = 'NO'
+                config.build_settings['CODE_SIGN_IDENTITY'] = ''
+                # 关键修复：确保 GoogleUtilities 系列模块能被查找到
+                config.build_settings['DEFINES_MODULE'] = 'YES'
+                config.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
+                config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+                config.build_settings['GCC_WARN_INHIBIT_ALL_WARNINGS'] = 'YES'
+              end
             end
           end
         end
@@ -66,58 +65,43 @@ jobs:
     - name: Build Kotlin Framework
       run: ./gradlew :shared:linkReleaseFrameworkIosArm64
 
-    - name: Prepare Framework for Xcode
-      run: |
-        # 将框架直接拷贝到 iosApp 目录，配合 Config.xcconfig 中的 $(PROJECT_DIR)
-        cp -R shared/build/bin/iosArm64/releaseFramework/Shared.framework iosApp/
-        ls -d iosApp/Shared.framework
-
-    - name: Build iOS App
+    - name: Build and Archive iOS App
       run: |
         cd iosApp
         set -o pipefail
-        # 使用 build 代替 archive，并明确指定真机 SDK
-        xcodebuild build -workspace iosApp.xcworkspace \
+        
+        # 使用 -Xlinker -no_warn_duplicate_libraries 解决 SwiftUICore 链接权限问题
+        xcodebuild -workspace iosApp.xcworkspace \
                    -scheme iosApp \
                    -configuration Release \
-                   -sdk iphoneos \
-                   -destination 'generic/platform=iOS' \
+                   -archivePath build/App.xcarchive \
+                   archive \
                    CODE_SIGNING_ALLOWED=NO \
                    CODE_SIGNING_REQUIRED=NO \
                    CODE_SIGNING_IDENTITY="" \
                    AD_HOC_CODE_SIGNING_ALLOWED=YES \
                    ENABLE_USER_SCRIPT_SANDBOXING=NO \
-                   COMPILER_INDEX_STORE_ENABLE=NO 2>&1 | tee xcodebuild.log || (grep -i "error: " xcodebuild.log | head -n 20 && grep -i "ld: " xcodebuild.log | head -n 20 && exit 1)
-
-    - name: Extract App from Build
-      run: |
-        mkdir -p final_output
-        # build 指令生成的 .app 路径比较固定
-        APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "Turf Mobile.app" -type d | head -n 1)
-        if [ -n "$APP_PATH" ]; then
-          cp -R "$APP_PATH" "final_output/"
-          echo "Successfully captured: $APP_PATH"
-        else
-          echo "Error: .app file not found in DerivedData!"
-          # 备用方案：尝试在当前目录寻找
-          APP_PATH=$(find iosApp/build -name "*.app" -type d | head -n 1)
-          if [ -n "$APP_PATH" ]; then
-             cp -R "$APP_PATH" "final_output/"
-          else
-             exit 1
-          fi
-        fi
+                   OTHER_LDFLAGS="\$(inherited) -Xlinker -no_warn_duplicate_libraries" \
+                   COMPILER_INDEX_STORE_ENABLE=NO \
+                   SKIP_INSTALL=NO 2>&1 | tee xcodebuild.log || (echo "Linker error details:" && grep -i "ld: " xcodebuild.log | head -n 20 && exit 1)
 
     - name: Extract App from Archive
       run: |
         mkdir -p final_output
-        APP_PATH=$(find iosApp/build/App.xcarchive -name "*.app" -type d | head -n 1)
+        # 针对带空格的项目名 "Turf Mobile" 进行精准查找
+        APP_PATH=$(find iosApp/build/App.xcarchive -name "Turf Mobile.app" -type d | head -n 1)
         if [ -n "$APP_PATH" ]; then
           cp -R "$APP_PATH" "final_output/"
           echo "Successfully captured: $APP_PATH"
         else
-          echo "Error: .app file not found in archive!"
-          exit 1
+          # 兜底方案：查找任何 .app
+          APP_PATH=$(find iosApp/build/App.xcarchive -name "*.app" -type d | head -n 1)
+          if [ -n "$APP_PATH" ]; then
+             cp -R "$APP_PATH" "final_output/"
+          else
+             echo "Error: .app file not found in archive!"
+             exit 1
+          fi
         fi
 
     - name: Upload Build Artifact

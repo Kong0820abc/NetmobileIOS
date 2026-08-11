@@ -6,7 +6,7 @@ PRODUCT_BUNDLE_IDENTIFIER=com.xyz.netmobile.NetmobileIOS$(TEAM_ID)
 CURRENT_PROJECT_VERSION=5
 MARKETING_VERSION=5.0.0
 
-// 核心修复：使用项目根目录下的 Shared.framework，避免路径转义问题
-FRAMEWORK_SEARCH_PATHS = $(inherited) "$(PROJECT_DIR)"
-OTHER_LDFLAGS = $(inherited) -framework Shared -ObjC -lc++ -lsqlite3 -lz
-SWIFT_INCLUDE_PATHS = $(inherited) "$(PROJECT_DIR)"
+// 核心修复：添加 -Xlinker 标志以跳过 Xcode 16 的严格库校验
+FRAMEWORK_SEARCH_PATHS = $(inherited) "$(PROJECT_DIR)/../shared/build/bin/iosArm64/releaseFramework"
+OTHER_LDFLAGS = $(inherited) -framework Shared -ObjC -Xlinker -no_warn_duplicate_libraries
+SWIFT_INCLUDE_PATHS = $(inherited) "$(PROJECT_DIR)/../shared/build/bin/iosArm64/releaseFramework"
