@@ -83,11 +83,12 @@ jobs:
                    AD_HOC_CODE_SIGNING_ALLOWED=YES \
                    ENABLE_USER_SCRIPT_SANDBOXING=NO \
                    IS_APPLE_CODE_SIGN_PARAMETER_REQUIRED=NO \
-                   FRAMEWORK_SEARCH_PATHS="\$(inherited) $FRAMEWORK_PATH" \
-                   OTHER_LDFLAGS="\$(inherited) -ObjC" \
-                   SWIFT_INCLUDE_PATHS="\$(inherited) $FRAMEWORK_PATH" \
+                   FRAMEWORK_SEARCH_PATHS="\$(inherited) '$FRAMEWORK_PATH'" \
+                   OTHER_LDFLAGS="\$(inherited) -framework Shared -ObjC" \
+                   SWIFT_INCLUDE_PATHS="\$(inherited) '$FRAMEWORK_PATH'" \
                    CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES=YES \
-                   OTHER_SWIFT_FLAGS="\$(inherited) -Xcc -Wno-error=non-modular-include-in-framework-module"
+                   OTHER_SWIFT_FLAGS="\$(inherited) -Xcc -Wno-error=non-modular-include-in-framework-module" \
+                   VALIDATE_WORKSPACE=NO
 
     - name: Extract App from Archive
       run: |
