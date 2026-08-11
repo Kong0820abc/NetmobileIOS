@@ -5,3 +5,8 @@ PRODUCT_BUNDLE_IDENTIFIER=com.xyz.netmobile.NetmobileIOS$(TEAM_ID)
 
 CURRENT_PROJECT_VERSION=5
 MARKETING_VERSION=5.0.0
+
+// 核心配置：使用引号保护路径，并确保继承 CocoaPods 路径
+FRAMEWORK_SEARCH_PATHS = $(inherited) "$(SRCROOT)/../shared/build/bin/iosArm64/releaseFramework"
+OTHER_LDFLAGS = $(inherited) -framework Shared
+SWIFT_INCLUDE_PATHS = $(inherited) "$(SRCROOT)/../shared/build/bin/iosArm64/releaseFramework"
