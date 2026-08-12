@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_KEY</key>
+	<string>AIzaSyCzWDtXBB3FAwn71wEvK8PBuEM87FiAoCI</string>
+	<key>GCM_SENDER_ID</key>
+	<string>842587854447</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.xyz.netmobile</string>
+	<key>PROJECT_ID</key>
+	<string>update-8c26e</string>
+	<key>STORAGE_BUCKET</key>
+	<string>update-8c26e.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:842587854447:ios:8b5c56b889d2cc4cf4df9a</string>
+	<key>DATABASE_URL</key>
+	<string>https://update-8c26e-default-rtdb.firebaseio.com</string>
+</dict>
+</plist>
