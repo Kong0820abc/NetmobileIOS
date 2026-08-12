@@ -46,8 +46,8 @@ workflows:
           APP_PATH=$(find $HOME/Library/Developer/Xcode/DerivedData -name "*.app" -type d | grep "Release-iphonesimulator" | head -n 1)
           APP_NAME=$(basename "$APP_PATH")
           cd $(dirname "$APP_PATH")
-          # 核心修复：使用引号包裹变量，防止空格导致 zip 失败
-          zip -r "$GITHUB_WORKSPACE/TurfMobile_Simulator.zip" "$APP_NAME"
+          # 核心修复：使用 $CM_BUILD_DIR 确保输出路径有写入权限
+          zip -r "$CM_BUILD_DIR/TurfMobile_Simulator.zip" "$APP_NAME"
     artifacts:
       - "*.zip"
 
@@ -96,9 +96,10 @@ workflows:
       - name: Package IPA
         script: |
           APP_PATH=$(find $HOME/Library/Developer/Xcode/DerivedData -name "*.app" -type d | grep "Release-iphoneos" | head -n 1)
-          mkdir -p Payload
-          # 核心修复：使用引号包裹路径，防止空格导致 cp 失败
-          cp -R "$APP_PATH" Payload/
+          # 核心修复：在项目构建目录内操作，确保权限正常
+          mkdir -p "$CM_BUILD_DIR/Payload"
+          cp -R "$APP_PATH" "$CM_BUILD_DIR/Payload/"
+          cd "$CM_BUILD_DIR"
           zip -qr TurfMobile_Device.ipa Payload
           rm -rf Payload
     artifacts:
