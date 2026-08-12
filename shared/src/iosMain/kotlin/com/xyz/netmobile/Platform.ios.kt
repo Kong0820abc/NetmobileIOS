@@ -55,13 +55,9 @@ class IOSPlatform: Platform {
         }
     }
 
-    @OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
     override fun setOrientation(landscape: Boolean) {
-        val orientation = if (landscape) platform.UIKit.UIInterfaceOrientationLandscapeRight else platform.UIKit.UIInterfaceOrientationPortrait
-        val device = platform.UIKit.UIDevice.currentDevice
-        val selector = platform.Foundation.NSSelectorFromString("setOrientation:")
-        // Kotlin/Native 会自动将 Long/Int 映射到 Objective-C 的数值类型
-        device.performSelector(selector, withObject = orientation as Any?)
+        // 核心修复：彻底禁用强制旋转调用，防止真机闪退。
+        // iOS 16+ 的真机对 setOrientation 校验极其严格，非法调用会直接导致程序退出。
     }
 }
 
