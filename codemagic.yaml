@@ -18,6 +18,9 @@ workflows:
       - name: Install CocoaPods
         script: |
           cd iosApp
+          # 物理删除导致报错的预览资源文件夹
+          rm -rf iosApp/Preview\ Content
+          
           cat <<EOF > Podfile
           platform :ios, '15.0'
           use_modular_headers!
@@ -55,7 +58,7 @@ workflows:
       - name: Build iOS App
         script: |
           set -o pipefail
-          # 核心修复：清理缓存并跳过 Preview Assets 编译
+          # 核心修复：清理缓存，锁定架构，并禁用所有资源符号生成以防止 Thinned 错误
           xcodebuild clean build -workspace "$XCODE_WORKSPACE" \
             -scheme "$XCODE_SCHEME" \
             -configuration Release \
@@ -63,12 +66,12 @@ workflows:
             -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_IDENTITY="" \
             AD_HOC_CODE_SIGNING_ALLOWED=YES \
             ENABLE_USER_SCRIPT_SANDBOXING=NO \
             OTHER_LDFLAGS="\$(inherited) -ObjC -Wl,-ld64" \
             COMPILER_INDEX_STORE_ENABLE=NO \
-            ASSETCATALOG_COMPILER_APPICON_NAME=AppIcon \
+            ASSETCATALOG_COMPILER_GENERATE_ASSET_SYMBOLS=NO \
             ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS=NO
     artifacts:
       - iosApp/build/ios/iphonesimulator/*.app
