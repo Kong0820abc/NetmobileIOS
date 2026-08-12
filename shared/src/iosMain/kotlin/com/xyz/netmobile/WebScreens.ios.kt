@@ -24,6 +24,27 @@ import com.multiplatform.webview.web.rememberWebViewNavigator
 import com.multiplatform.webview.web.rememberWebViewState
 import com.multiplatform.webview.web.WebViewState
 import com.multiplatform.webview.web.WebViewNavigator
+import com.multiplatform.webview.request.RequestInterceptor
+import com.multiplatform.webview.request.WebRequest
+import com.multiplatform.webview.request.WebRequestInterceptResult
+
+// 广告拦截关键字列表
+private val AD_KEYWORDS = listOf(
+    "googleads", "doubleclick", "adsbygoogle", "amazon-adsystem",
+    "popads", "adservice", "analytics", "facebook.com/tr",
+    "adsystem", "adnxs", "smartadserver", "sofascore-ads"
+)
+
+// 通用的 iOS 请求拦截器，用于屏蔽广告加速加载
+private val IOS_AD_INTERCEPTOR = object : RequestInterceptor {
+    override fun onInterceptUrlRequest(request: WebRequest, navigator: WebViewNavigator): WebRequestInterceptResult {
+        val url = request.url.lowercase()
+        if (AD_KEYWORDS.any { url.contains(it) }) {
+            return WebRequestInterceptResult.Reject
+        }
+        return WebRequestInterceptResult.Allow
+    }
+}
 
 @Composable
 actual fun HorseScreen(
@@ -35,7 +56,7 @@ actual fun HorseScreen(
     val targetUrl = if (isEng) "https://netmobile.me/app/horse/horse_info" else "https://netmobile.me/app/horse/horse_info?lang=zh-hk"
     
     val state = rememberWebViewState(targetUrl)
-    val navigator = rememberWebViewNavigator()
+    val navigator = rememberWebViewNavigator(requestInterceptor = IOS_AD_INTERCEPTOR)
     val platform = getPlatform()
 
     DisposableEffect(Unit) {
@@ -44,7 +65,7 @@ actual fun HorseScreen(
         }
     }
     
-    state.webSettings.customUserAgentString = "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1"
+    state.webSettings.customUserAgentString = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
 
     LaunchedEffect(targetUrl) {
         if (state.lastLoadedUrl != targetUrl) {
@@ -73,7 +94,7 @@ actual fun HorseLiveScreen(
     val targetUrl = if (isEng) "https://horsereplaypage.netlify.app/?lang=en" else "https://horsereplaypage.netlify.app/?lang=zh"
     
     val state = rememberWebViewState(targetUrl)
-    val navigator = rememberWebViewNavigator()
+    val navigator = rememberWebViewNavigator(requestInterceptor = IOS_AD_INTERCEPTOR)
     val platform = getPlatform()
 
     DisposableEffect(Unit) {
@@ -82,7 +103,7 @@ actual fun HorseLiveScreen(
         }
     }
     
-    state.webSettings.customUserAgentString = "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1"
+    state.webSettings.customUserAgentString = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
 
     LaunchedEffect(targetUrl) {
         if (state.lastLoadedUrl != targetUrl) {
@@ -111,7 +132,7 @@ actual fun SoccerScoresScreen(
     val targetUrl = if (isEng) "https://www.sofascore.com/" else "https://www.boti.net/football/"
     
     val state = rememberWebViewState(targetUrl)
-    val navigator = rememberWebViewNavigator()
+    val navigator = rememberWebViewNavigator(requestInterceptor = IOS_AD_INTERCEPTOR)
     val platform = getPlatform()
 
     DisposableEffect(Unit) {
@@ -120,7 +141,7 @@ actual fun SoccerScoresScreen(
         }
     }
     
-    state.webSettings.customUserAgentString = "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1"
+    state.webSettings.customUserAgentString = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
 
     LaunchedEffect(targetUrl) {
         if (state.lastLoadedUrl != targetUrl) {
@@ -149,7 +170,7 @@ actual fun SoccerOddsScreen(
     val targetUrl = if (isEng) "https://netmobile.me/app/soccer/main2" else "https://netmobile.me/app/soccer/main2?lang=2"
     
     val state = rememberWebViewState(targetUrl)
-    val navigator = rememberWebViewNavigator()
+    val navigator = rememberWebViewNavigator(requestInterceptor = IOS_AD_INTERCEPTOR)
     val platform = getPlatform()
 
     DisposableEffect(Unit) {
@@ -158,7 +179,7 @@ actual fun SoccerOddsScreen(
         }
     }
     
-    state.webSettings.customUserAgentString = "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1"
+    state.webSettings.customUserAgentString = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
 
     LaunchedEffect(targetUrl) {
         if (state.lastLoadedUrl != targetUrl) {
@@ -187,7 +208,7 @@ actual fun LotteryScreen(
     val targetUrl = if (isEng) "https://4dlotterypage.netlify.app/?lang=en" else "https://4dlotterypage.netlify.app/?lang=zh"
     
     val state = rememberWebViewState(targetUrl)
-    val navigator = rememberWebViewNavigator()
+    val navigator = rememberWebViewNavigator(requestInterceptor = IOS_AD_INTERCEPTOR)
     val platform = getPlatform()
 
     DisposableEffect(Unit) {
@@ -196,7 +217,7 @@ actual fun LotteryScreen(
         }
     }
     
-    state.webSettings.customUserAgentString = "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1"
+    state.webSettings.customUserAgentString = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
 
     LaunchedEffect(targetUrl) {
         if (state.lastLoadedUrl != targetUrl) {
@@ -228,11 +249,8 @@ fun WebScreenLayout(
     val colorRed = Color(0xFFD32F2F)
     val colorYellow = Color(0xFFFFEB3B)
 
-    // 规范化 URL 比较，防止末尾斜杠导致判断失败
     val currentUrl = state.lastLoadedUrl?.removeSuffix("/") ?: ""
     val normalizedTarget = targetUrl.removeSuffix("/")
-    
-    // 如果当前已经是起始页，则认为是在“根部”
     val isAtRoot = currentUrl == normalizedTarget || currentUrl.isEmpty()
 
     Column(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
@@ -248,7 +266,6 @@ fun WebScreenLayout(
                 modifier = Modifier
                     .align(Alignment.CenterStart)
                     .clickable { 
-                        // 智能返回逻辑：如果在首页面，直接退出到菜单
                         if (isAtRoot || !navigator.canGoBack) {
                             onBack()
                         } else {
@@ -336,6 +353,12 @@ fun WebScreenLayout(
                     }
                     window.dispatchEvent(new Event('resize'));
                 }, 200);
+                
+                // 强制隐藏广告容器以加速渲染
+                var adSelectors = ['.adsbygoogle', 'ins.adsbygoogle', '[id*="google_ads"]', '.sofascore-ads', '[class*="AdWrapper"]', '.top-ad-container'];
+                adSelectors.forEach(function(s) {
+                    document.querySelectorAll(s).forEach(function(el) { el.style.display = 'none'; });
+                });
             })();
         """.trimIndent()
         LaunchedEffect(state.loadingState) {
