@@ -57,6 +57,7 @@ actual fun SoccerScoresScreen(
     }
 
     var isWebLoading by remember { mutableStateOf(true) }
+    var needsClearHistory by remember { mutableStateOf(false) }
     val contentAlpha by animateFloatAsState(
         targetValue = if (isWebLoading) 0f else 1f,
         animationSpec = tween(durationMillis = 300),
@@ -139,6 +140,10 @@ actual fun SoccerScoresScreen(
                             }
 
                             override fun onPageFinished(view: WebView?, url: String?) {
+                                if (needsClearHistory) {
+                                    view?.clearHistory()
+                                    needsClearHistory = false
+                                }
                                 val script = """
                                     (function() {
                                         var meta = document.querySelector('meta[name="viewport"]');
@@ -211,6 +216,7 @@ actual fun SoccerScoresScreen(
                 },
                 update = { view ->
                     if (view.url != targetUrl) {
+                        needsClearHistory = true
                         view.loadUrl(targetUrl)
                     }
                 },

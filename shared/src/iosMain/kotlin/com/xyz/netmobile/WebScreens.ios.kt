@@ -212,6 +212,13 @@ fun WebScreenLayout(
     val colorRed = Color(0xFFD32F2F)
     val colorYellow = Color(0xFFFFEB3B)
 
+    // 核心修复：监听内容变化（通常由语言切换引起），并清理历史记录
+    // 注意：ios 的 WebViewNavigator 本身没有 clearHistory，
+    // 我们通过在语言切换时“重置”状态来模拟清理，或者在返回逻辑中进行拦截。
+    
+    // 我们定义一个基础 URL，如果当前 URL 等于基础 URL，则直接退出
+    val baseUrl = state.lastLoadedUrl ?: ""
+
     Column(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
         Box(
             modifier = Modifier
@@ -224,7 +231,14 @@ fun WebScreenLayout(
             Column(
                 modifier = Modifier
                     .align(Alignment.CenterStart)
-                    .clickable { onBack() },
+                    .clickable { 
+                        // 如果当前已经在该语言的首页面，则直接回主菜单
+                        if (!navigator.canGoBack) {
+                            onBack()
+                        } else {
+                            navigator.navigateBack()
+                        }
+                    },
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Icon(
@@ -275,11 +289,15 @@ fun WebScreenLayout(
                 label = "ContentAlpha"
             )
 
-            WebView(
-                state = state,
-                navigator = navigator,
-                modifier = Modifier.fillMaxSize().graphicsLayer { alpha = contentAlpha }
-            )
+    // 核心修复：当语言发生变化时，我们应该重置 Navigator 的状态
+    // 我们通过在语言变化时强制销毁并重建 WebView 来实现最彻底的历史清理
+    key(isEng) {
+        WebView(
+            state = state,
+            navigator = navigator,
+            modifier = Modifier.fillMaxSize().graphicsLayer { alpha = contentAlpha }
+        )
+    }
 
             if (isWebLoading) {
                 CircularProgressIndicator(color = Color(0xFFD32F2F))

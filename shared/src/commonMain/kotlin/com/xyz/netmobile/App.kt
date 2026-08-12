@@ -134,23 +134,19 @@ fun App() {
                     }
 
                     "horse_live" -> {
-                        key(selectedLanguage) {
-                            HorseLiveScreen(
-                                selectedLanguage = selectedLanguage,
-                                onLanguageChange = onLanguageChange,
-                                onBack = { currentScreen = "home" }
-                            )
-                        }
+                        HorseLiveScreen(
+                            selectedLanguage = selectedLanguage,
+                            onLanguageChange = onLanguageChange,
+                            onBack = { currentScreen = "home" }
+                        )
                     }
                     
                     "horse" -> {
-                        key(selectedLanguage) {
-                            HorseScreen(
-                                selectedLanguage = selectedLanguage,
-                                onLanguageChange = onLanguageChange,
-                                onBack = { currentScreen = "home" }
-                            )
-                        }
+                        HorseScreen(
+                            selectedLanguage = selectedLanguage,
+                            onLanguageChange = onLanguageChange,
+                            onBack = { currentScreen = "home" }
+                        )
                     }
                     
                     "soccer" -> {
@@ -164,33 +160,27 @@ fun App() {
                     }
                     
                     "soccer_scores" -> {
-                        key(selectedLanguage) {
-                            SoccerScoresScreen(
-                                selectedLanguage = selectedLanguage,
-                                onLanguageChange = onLanguageChange,
-                                onBack = { currentScreen = "soccer" }
-                            )
-                        }
+                        SoccerScoresScreen(
+                            selectedLanguage = selectedLanguage,
+                            onLanguageChange = onLanguageChange,
+                            onBack = { currentScreen = "soccer" }
+                        )
                     }
 
                     "soccer_odds" -> {
-                        key(selectedLanguage) {
-                            SoccerOddsScreen(
-                                selectedLanguage = selectedLanguage,
-                                onLanguageChange = onLanguageChange,
-                                onBack = { currentScreen = "soccer" }
-                            )
-                        }
+                        SoccerOddsScreen(
+                            selectedLanguage = selectedLanguage,
+                            onLanguageChange = onLanguageChange,
+                            onBack = { currentScreen = "soccer" }
+                        )
                     }
                     
                     "lottery" -> {
-                        key(selectedLanguage) {
-                            LotteryScreen(
-                                selectedLanguage = selectedLanguage,
-                                onLanguageChange = onLanguageChange,
-                                onBack = { currentScreen = "home" }
-                            )
-                        }
+                        LotteryScreen(
+                            selectedLanguage = selectedLanguage,
+                            onLanguageChange = onLanguageChange,
+                            onBack = { currentScreen = "home" }
+                        )
                     }
                 }
             }

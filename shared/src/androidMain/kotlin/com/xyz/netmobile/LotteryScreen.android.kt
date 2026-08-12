@@ -53,7 +53,7 @@ actual fun LotteryScreen(
     val colorYellow = Color(0xFFFFEB3B)
 
     val targetUrl = remember(selectedLanguage) {
-        if (isEng) "https://4dlotteryresults.netlify.app/?lang=en" else "https://4dlotteryresults.netlify.app/?lang=zh"
+        if (isEng) "https://4dlotterypage.netlify.app/?lang=en" else "https://4dlotterypage.netlify.app/?lang=zh"
     }
 
     var isWebLoading by remember { mutableStateOf(true) }

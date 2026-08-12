@@ -55,13 +55,9 @@ class IOSPlatform: Platform {
         }
     }
 
-    @OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
     override fun setOrientation(landscape: Boolean) {
-        val orientation = if (landscape) platform.UIKit.UIInterfaceOrientationLandscapeRight else platform.UIKit.UIInterfaceOrientationPortrait
-        platform.UIKit.UIDevice.currentDevice.performSelector(
-            platform.Foundation.NSSelectorFromString("setOrientation:"),
-            withObject = orientation as Any?
-        )
+        // 针对闪退问题：暂时安全化处理方向切换
+        // 在没有完美解决 KVC 调用前，仅依靠系统的自动旋转行为
     }
 }
 

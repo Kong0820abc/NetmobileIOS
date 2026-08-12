@@ -54,10 +54,11 @@ actual fun HorseLiveScreen(
     val colorBackground = Color(0xFFF5F7FA)
 
     val targetUrl = remember(selectedLanguage) {
-        if (isEng) "https://horsereplay.netlify.app/?lang=en" else "https://horsereplay.netlify.app/?lang=zh"
+        if (isEng) "https://horsereplaypage.netlify.app/?lang=en" else "https://horsereplaypage.netlify.app/?lang=zh"
     }
 
     var isWebLoading by remember { mutableStateOf(true) }
+    var needsClearHistory by remember { mutableStateOf(false) }
     val contentAlpha by animateFloatAsState(
         targetValue = if (isWebLoading) 0f else 1f,
         animationSpec = tween(durationMillis = 300),
@@ -192,6 +193,10 @@ actual fun HorseLiveScreen(
                                     }
 
                                     override fun onPageFinished(view: WebView?, url: String?) {
+                                        if (needsClearHistory) {
+                                            view?.clearHistory()
+                                            needsClearHistory = false
+                                        }
                                         postDelayed({ isWebLoading = false }, 500)
                                     }
                                 }
@@ -210,7 +215,12 @@ actual fun HorseLiveScreen(
                                 loadUrl(targetUrl)
                             }
                         },
-                        update = { },
+                        update = { view ->
+                            if (view.url != targetUrl) {
+                                needsClearHistory = true
+                                view.loadUrl(targetUrl)
+                            }
+                        },
                         modifier = Modifier.fillMaxSize().graphicsLayer { alpha = contentAlpha }
                     )
 
