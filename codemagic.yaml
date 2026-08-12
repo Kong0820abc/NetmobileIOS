@@ -4,8 +4,6 @@ workflows:
     instance_type: mac_mini_m2
     max_build_duration: 60
     environment:
-      groups:
-        - sdk_versions
       vars:
         XCODE_WORKSPACE: "iosApp/iosApp.xcworkspace"
         XCODE_SCHEME: "iosApp"
@@ -13,18 +11,32 @@ workflows:
       java: 17
       xcode: latest
     scripts:
-      - name: Set execute permission for gradlew
+      - name: Set execute permission
         script: chmod +x gradlew
-      - name: Install CocoaPods
+      - name: Fix Assets and Podfile
         script: |
           cd iosApp
-          # 物理删除导致报错的预览资源文件夹
+          # 1. 物理删除预览内容防止干扰
           rm -rf iosApp/Preview\ Content
           
+          # 2. 强制重写 AppIcon 的 Contents.json，消除所有多余的外观定义
+          cat <<EOF > iosApp/Assets.xcassets/AppIcon.appiconset/Contents.json
+          {
+            "images": [
+              {
+                "filename": "app-icon-1024.png",
+                "idiom": "universal",
+                "platform": "ios",
+                "size": "1024x1024"
+              }
+            ],
+            "info": { "author": "xcode", "version": 1 }
+          }
+          EOF
+
+          # 3. 生成 Podfile
           cat <<EOF > Podfile
           platform :ios, '15.0'
-          use_modular_headers!
-          
           target 'iosApp' do
             use_frameworks! :linkage => :static
             pod 'FirebaseDatabase'
@@ -32,19 +44,13 @@ workflows:
             pod 'FirebaseCoreInternal'
             pod 'GoogleUtilities'
           end
-
           post_install do |installer|
             installer.generated_projects.each do |project|
               project.targets.each do |target|
                 target.build_configurations.each do |config|
                   config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
                   config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
-                  config.build_settings['CODE_SIGNING_REQUIRED'] = 'NO'
-                  config.build_settings['CODE_SIGN_IDENTITY'] = ''
                   config.build_settings['DEFINES_MODULE'] = 'YES'
-                  config.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
-                  config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
-                  config.build_settings['GCC_WARN_INHIBIT_ALL_WARNINGS'] = 'YES'
                 end
               end
             end
@@ -53,13 +59,12 @@ workflows:
           pod install
       - name: Build KMP Framework
         script: |
-          # 核心修复：编译模拟器版本框架
           ./gradlew :shared:linkReleaseFrameworkIosSimulatorArm64
       - name: Build iOS App
         script: |
           set -o pipefail
-          # 核心修复：清理缓存，锁定架构，并禁用所有资源符号生成以防止 Thinned 错误
-          xcodebuild clean build -workspace "$XCODE_WORKSPACE" \
+          # 核心修复：ASSETCATALOG 相关的全部禁用标志，彻底绕过 Thinned 错误
+          xcodebuild build -workspace "$XCODE_WORKSPACE" \
             -scheme "$XCODE_SCHEME" \
             -configuration Release \
             -sdk iphonesimulator \
@@ -72,16 +77,16 @@ workflows:
             OTHER_LDFLAGS="\$(inherited) -ObjC -Wl,-ld64" \
             COMPILER_INDEX_STORE_ENABLE=NO \
             ASSETCATALOG_COMPILER_GENERATE_ASSET_SYMBOLS=NO \
-            ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS=NO
+            ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS=NO \
+            ASSETCATALOG_COMPILER_STANDALONE_ICON_BEHAVIOR=all \
+            ENABLE_ON_DEMAND_RESOURCES=NO \
+            STRIP_INSTALLED_PRODUCT=NO \
+            COPY_PHASE_STRIP=NO
     artifacts:
       - iosApp/build/ios/iphonesimulator/*.app
       - build/ios/iphonesimulator/*.app
       - $HOME/Library/Developer/Xcode/DerivedData/**/Build/Products/Release-iphonesimulator/*.app
-      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/Products/Release-iphonesimulator/*.app.zip
     publishing:
       email:
         recipients:
-          - kong0820kong0820@gmail.com # 构建完成后会发邮件通知你
-        notify:
-          success: true
-          failure: true
+          - kong0820kong0820@gmail.com
