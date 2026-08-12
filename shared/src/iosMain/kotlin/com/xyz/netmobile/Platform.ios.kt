@@ -54,6 +54,15 @@ class IOSPlatform: Platform {
             alert.dismissViewControllerAnimated(true, completion = null)
         }
     }
+
+    @OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
+    override fun setOrientation(landscape: Boolean) {
+        val orientation = if (landscape) platform.UIKit.UIInterfaceOrientationLandscapeRight else platform.UIKit.UIInterfaceOrientationPortrait
+        platform.UIKit.UIDevice.currentDevice.performSelector(
+            platform.Foundation.NSSelectorFromString("setOrientation:"),
+            withObject = orientation as Any?
+        )
+    }
 }
 
 actual fun getPlatform(): Platform = IOSPlatform()

@@ -66,6 +66,15 @@ class AndroidPlatform : Platform {
     override fun showToast(message: String) {
         android.widget.Toast.makeText(platformContext, message, android.widget.Toast.LENGTH_SHORT).show()
     }
+
+    override fun setOrientation(landscape: Boolean) {
+        val activity = platformContext as? android.app.Activity
+        activity?.requestedOrientation = if (landscape) {
+            android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        } else {
+            android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        }
+    }
 }
 
 actual fun getPlatform(): Platform = AndroidPlatform()

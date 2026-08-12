@@ -10,6 +10,7 @@ interface Platform {
     fun getCurrentDate(): String
     fun exitApp()
     fun showToast(message: String)
+    fun setOrientation(landscape: Boolean)
 }
 
 expect fun getPlatform(): Platform

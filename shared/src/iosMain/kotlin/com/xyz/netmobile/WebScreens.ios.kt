@@ -36,6 +36,16 @@ actual fun HorseScreen(
     
     val state = rememberWebViewState(targetUrl)
     val navigator = rememberWebViewNavigator()
+    val platform = getPlatform()
+
+    // 针对马赛重播页面，我们可以根据加载状态注入监听全屏的逻辑
+    // 但为了确保用户体验，我们也可以直接在进入此屏幕时强制允许旋转
+    DisposableEffect(Unit) {
+        // 进入时不需要强制，让系统根据全屏行为自动处理，或者手动触发
+        onDispose {
+            platform.setOrientation(false) // 退出时强制回竖屏
+        }
+    }
     
     // 同步 Android 的 UserAgent
     state.webSettings.customUserAgentString = "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1"
@@ -65,6 +75,16 @@ actual fun HorseLiveScreen(
     
     val state = rememberWebViewState(targetUrl)
     val navigator = rememberWebViewNavigator()
+    val platform = getPlatform()
+
+    // 针对马赛重播页面，我们可以根据加载状态注入监听全屏的逻辑
+    // 但为了确保用户体验，我们也可以直接在进入此屏幕时强制允许旋转
+    DisposableEffect(Unit) {
+        // 进入时不需要强制，让系统根据全屏行为自动处理，或者手动触发
+        onDispose {
+            platform.setOrientation(false) // 退出时强制回竖屏
+        }
+    }
     
     state.webSettings.customUserAgentString = "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1"
 
@@ -89,6 +109,16 @@ actual fun SoccerScoresScreen(
     
     val state = rememberWebViewState(targetUrl)
     val navigator = rememberWebViewNavigator()
+    val platform = getPlatform()
+
+    // 针对马赛重播页面，我们可以根据加载状态注入监听全屏的逻辑
+    // 但为了确保用户体验，我们也可以直接在进入此屏幕时强制允许旋转
+    DisposableEffect(Unit) {
+        // 进入时不需要强制，让系统根据全屏行为自动处理，或者手动触发
+        onDispose {
+            platform.setOrientation(false) // 退出时强制回竖屏
+        }
+    }
     
     state.webSettings.customUserAgentString = "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1"
 
@@ -113,6 +143,16 @@ actual fun SoccerOddsScreen(
     
     val state = rememberWebViewState(targetUrl)
     val navigator = rememberWebViewNavigator()
+    val platform = getPlatform()
+
+    // 针对马赛重播页面，我们可以根据加载状态注入监听全屏的逻辑
+    // 但为了确保用户体验，我们也可以直接在进入此屏幕时强制允许旋转
+    DisposableEffect(Unit) {
+        // 进入时不需要强制，让系统根据全屏行为自动处理，或者手动触发
+        onDispose {
+            platform.setOrientation(false) // 退出时强制回竖屏
+        }
+    }
     
     state.webSettings.customUserAgentString = "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1"
 
@@ -137,6 +177,16 @@ actual fun LotteryScreen(
     
     val state = rememberWebViewState(targetUrl)
     val navigator = rememberWebViewNavigator()
+    val platform = getPlatform()
+
+    // 针对马赛重播页面，我们可以根据加载状态注入监听全屏的逻辑
+    // 但为了确保用户体验，我们也可以直接在进入此屏幕时强制允许旋转
+    DisposableEffect(Unit) {
+        // 进入时不需要强制，让系统根据全屏行为自动处理，或者手动触发
+        onDispose {
+            platform.setOrientation(false) // 退出时强制回竖屏
+        }
+    }
     
     state.webSettings.customUserAgentString = "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1"
 
