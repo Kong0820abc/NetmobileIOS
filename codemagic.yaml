@@ -44,8 +44,10 @@ workflows:
       - name: Package for Appetize
         script: |
           APP_PATH=$(find $HOME/Library/Developer/Xcode/DerivedData -name "*.app" -type d | grep "Release-iphonesimulator" | head -n 1)
+          APP_NAME=$(basename "$APP_PATH")
           cd $(dirname "$APP_PATH")
-          zip -r "$GITHUB_WORKSPACE/TurfMobile_Simulator.zip" $(basename "$APP_PATH")
+          # 核心修复：使用引号包裹变量，防止空格导致 zip 失败
+          zip -r "$GITHUB_WORKSPACE/TurfMobile_Simulator.zip" "$APP_NAME"
     artifacts:
       - "*.zip"
 
@@ -95,7 +97,9 @@ workflows:
         script: |
           APP_PATH=$(find $HOME/Library/Developer/Xcode/DerivedData -name "*.app" -type d | grep "Release-iphoneos" | head -n 1)
           mkdir -p Payload
+          # 核心修复：使用引号包裹路径，防止空格导致 cp 失败
           cp -R "$APP_PATH" Payload/
           zip -qr TurfMobile_Device.ipa Payload
+          rm -rf Payload
     artifacts:
       - "*.ipa"
