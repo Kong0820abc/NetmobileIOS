@@ -38,20 +38,23 @@ actual fun HorseScreen(
     val navigator = rememberWebViewNavigator()
     val platform = getPlatform()
 
-    // 针对马赛重播页面，我们可以根据加载状态注入监听全屏的逻辑
-    // 但为了确保用户体验，我们也可以直接在进入此屏幕时强制允许旋转
+    // 针对马赛重播页面：进入时立即强制横屏，退出时恢复
+    LaunchedEffect(Unit) {
+        platform.setOrientation(true)
+    }
+
     DisposableEffect(Unit) {
-        // 进入时不需要强制，让系统根据全屏行为自动处理，或者手动触发
         onDispose {
             platform.setOrientation(false) // 退出时强制回竖屏
         }
     }
     
-    // 同步 Android 的 UserAgent
-    state.webSettings.customUserAgentString = "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1"
-
+    // 核心改进：当 URL 实际变化时，让 WebView 内部静默更新，而不是强制销毁重建
+    // 这样可以复用底层的 WKProcess 池，加载速度会快很多
     LaunchedEffect(targetUrl) {
-        navigator.loadUrl(targetUrl)
+        if (state.lastLoadedUrl != targetUrl) {
+            navigator.loadUrl(targetUrl)
+        }
     }
 
     WebScreenLayout(
@@ -77,10 +80,12 @@ actual fun HorseLiveScreen(
     val navigator = rememberWebViewNavigator()
     val platform = getPlatform()
 
-    // 针对马赛重播页面，我们可以根据加载状态注入监听全屏的逻辑
-    // 但为了确保用户体验，我们也可以直接在进入此屏幕时强制允许旋转
+    // 针对马赛重播页面：进入时立即强制横屏，退出时恢复
+    LaunchedEffect(Unit) {
+        platform.setOrientation(true)
+    }
+
     DisposableEffect(Unit) {
-        // 进入时不需要强制，让系统根据全屏行为自动处理，或者手动触发
         onDispose {
             platform.setOrientation(false) // 退出时强制回竖屏
         }
@@ -111,10 +116,12 @@ actual fun SoccerScoresScreen(
     val navigator = rememberWebViewNavigator()
     val platform = getPlatform()
 
-    // 针对马赛重播页面，我们可以根据加载状态注入监听全屏的逻辑
-    // 但为了确保用户体验，我们也可以直接在进入此屏幕时强制允许旋转
+    // 针对马赛重播页面：进入时立即强制横屏，退出时恢复
+    LaunchedEffect(Unit) {
+        platform.setOrientation(true)
+    }
+
     DisposableEffect(Unit) {
-        // 进入时不需要强制，让系统根据全屏行为自动处理，或者手动触发
         onDispose {
             platform.setOrientation(false) // 退出时强制回竖屏
         }
@@ -145,10 +152,12 @@ actual fun SoccerOddsScreen(
     val navigator = rememberWebViewNavigator()
     val platform = getPlatform()
 
-    // 针对马赛重播页面，我们可以根据加载状态注入监听全屏的逻辑
-    // 但为了确保用户体验，我们也可以直接在进入此屏幕时强制允许旋转
+    // 针对马赛重播页面：进入时立即强制横屏，退出时恢复
+    LaunchedEffect(Unit) {
+        platform.setOrientation(true)
+    }
+
     DisposableEffect(Unit) {
-        // 进入时不需要强制，让系统根据全屏行为自动处理，或者手动触发
         onDispose {
             platform.setOrientation(false) // 退出时强制回竖屏
         }
@@ -179,10 +188,12 @@ actual fun LotteryScreen(
     val navigator = rememberWebViewNavigator()
     val platform = getPlatform()
 
-    // 针对马赛重播页面，我们可以根据加载状态注入监听全屏的逻辑
-    // 但为了确保用户体验，我们也可以直接在进入此屏幕时强制允许旋转
+    // 针对马赛重播页面：进入时立即强制横屏，退出时恢复
+    LaunchedEffect(Unit) {
+        platform.setOrientation(true)
+    }
+
     DisposableEffect(Unit) {
-        // 进入时不需要强制，让系统根据全屏行为自动处理，或者手动触发
         onDispose {
             platform.setOrientation(false) // 退出时强制回竖屏
         }
@@ -289,15 +300,13 @@ fun WebScreenLayout(
                 label = "ContentAlpha"
             )
 
-    // 核心修复：当语言发生变化时，我们应该重置 Navigator 的状态
-    // 我们通过在语言变化时强制销毁并重建 WebView 来实现最彻底的历史清理
-    key(isEng) {
-        WebView(
-            state = state,
-            navigator = navigator,
-            modifier = Modifier.fillMaxSize().graphicsLayer { alpha = contentAlpha }
-        )
-    }
+    // 核心改进：当语言变化时，只更新标题
+    // 历史记录的清理交由顶部的返回按钮判断，而不是暴力销毁 WebView
+    WebView(
+        state = state,
+        navigator = navigator,
+        modifier = Modifier.fillMaxSize().graphicsLayer { alpha = contentAlpha }
+    )
 
             if (isWebLoading) {
                 CircularProgressIndicator(color = Color(0xFFD32F2F))
