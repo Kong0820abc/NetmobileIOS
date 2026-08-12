@@ -71,7 +71,7 @@ actual fun HorseLiveScreen(
     onBack: () -> Unit
 ) {
     val isEng = selectedLanguage == "ENG"
-    val targetUrl = if (isEng) "https://horsereplay.netlify.app/?lang=en" else "https://horsereplay.netlify.app/?lang=zh"
+    val targetUrl = if (isEng) "https://horsereplaypage.netlify.app/?lang=en" else "https://horsereplaypage.netlify.app/?lang=zh"
     
     val state = rememberWebViewState(targetUrl)
     val navigator = rememberWebViewNavigator()
@@ -173,7 +173,7 @@ actual fun LotteryScreen(
     onBack: () -> Unit
 ) {
     val isEng = selectedLanguage == "ENG"
-    val targetUrl = if (isEng) "https://4dlotteryresults.netlify.app/?lang=en" else "https://4dlotteryresults.netlify.app/?lang=zh"
+    val targetUrl = if (isEng) "https://4dlotterypage.netlify.app/?lang=en" else "https://4dlotterypage.netlify.app/?lang=zh"
     
     val state = rememberWebViewState(targetUrl)
     val navigator = rememberWebViewNavigator()

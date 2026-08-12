@@ -1,6 +1,6 @@
 workflows:
-  ios-unsigned-workflow:
-    name: iOS Unsigned Build
+  ios-simulator-appetize:
+    name: iOS Simulator (For Appetize.io)
     instance_type: mac_mini_m2
     max_build_duration: 60
     environment:
@@ -13,37 +13,15 @@ workflows:
     scripts:
       - name: Set execute permission
         script: chmod +x gradlew
-      - name: Fix Assets and Podfile
+      - name: Install Pods and Fix Assets
         script: |
           cd iosApp
-          # 1. 彻底清理可能有干扰的文件夹
           rm -rf iosApp/Preview\ Content
-          
-          # 2. 使用 macOS 内部工具 sips 强制处理图标（去除透明度、设为 1024x1024）
-          ICON_SRC="../androidApp/src/main/res/drawable/logo.png"
-          ICON_DEST="iosApp/Assets.xcassets/AppIcon.appiconset/app-icon-1024.png"
-          mkdir -p "$(dirname "$ICON_DEST")"
-          
-          # 转换：先转为不含 alpha 的真彩色 PNG，再强制缩放
-          sips -s format png --padToHeightWidth 1024 1024 "$ICON_SRC" --out "$ICON_DEST"
-          sips -s formatProperties '{"hasAlpha":false}' "$ICON_DEST"
-          
-          # 3. 强制重写极简 Contents.json
+          sips -s format png --padToHeightWidth 1024 1024 "../androidApp/src/main/res/drawable/logo.png" --out "iosApp/Assets.xcassets/AppIcon.appiconset/app-icon-1024.png"
+          sips -s formatProperties '{"hasAlpha":false}' "iosApp/Assets.xcassets/AppIcon.appiconset/app-icon-1024.png"
           cat <<EOF > iosApp/Assets.xcassets/AppIcon.appiconset/Contents.json
-          {
-            "images": [
-              {
-                "filename": "app-icon-1024.png",
-                "idiom": "universal",
-                "platform": "ios",
-                "size": "1024x1024"
-              }
-            ],
-            "info": { "author": "xcode", "version": 1 }
-          }
+          { "images": [ { "filename": "app-icon-1024.png", "idiom": "universal", "platform": "ios", "size": "1024x1024" } ], "info": { "author": "xcode", "version": 1 } }
           EOF
-
-          # 4. 生成 Podfile
           cat <<EOF > Podfile
           platform :ios, '15.0'
           target 'iosApp' do
@@ -54,44 +32,70 @@ workflows:
             pod 'GoogleUtilities'
           end
           post_install do |installer|
-            installer.generated_projects.each do |project|
-              project.targets.each do |target|
-                target.build_configurations.each do |config|
-                  config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
-                  config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
-                  config.build_settings['DEFINES_MODULE'] = 'YES'
-                end
-              end
-            end
+            installer.generated_projects.each { |p| p.targets.each { |t| t.build_configurations.each { |c| c.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'; c.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'; c.build_settings['DEFINES_MODULE'] = 'YES' } } }
           end
           EOF
           pod install
-      - name: Build KMP Framework
+      - name: Build KMP Framework (Simulator)
+        script: ./gradlew :shared:linkReleaseFrameworkIosSimulatorArm64
+      - name: Build iOS App (Simulator)
         script: |
-          ./gradlew :shared:linkReleaseFrameworkIosSimulatorArm64
-      - name: Build iOS App
+          xcodebuild build -workspace "$XCODE_WORKSPACE" -scheme "$XCODE_SCHEME" -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
+      - name: Package for Appetize
         script: |
-          set -o pipefail
-          # 核心修复：添加 ASSETCATALOG 优化控制，避开 Thinning 错误
-          xcodebuild build -workspace "$XCODE_WORKSPACE" \
-            -scheme "$XCODE_SCHEME" \
-            -configuration Release \
-            -sdk iphonesimulator \
-            -destination 'generic/platform=iOS Simulator' \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_IDENTITY="" \
-            AD_HOC_CODE_SIGNING_ALLOWED=YES \
-            COMPILER_INDEX_STORE_ENABLE=NO \
-            OTHER_LDFLAGS="\$(inherited) -ObjC -Wl,-ld64" \
-            ASSETCATALOG_COMPILER_OPTIMIZATION=space \
-            ASSETCATALOG_COMPILER_GENERATE_ASSET_SYMBOLS=NO
+          APP_PATH=$(find $HOME/Library/Developer/Xcode/DerivedData -name "*.app" -type d | grep "Release-iphonesimulator" | head -n 1)
+          cd $(dirname "$APP_PATH")
+          zip -r "$GITHUB_WORKSPACE/TurfMobile_Simulator.zip" $(basename "$APP_PATH")
     artifacts:
-      - iosApp/build/ios/iphonesimulator/*.app
-      - build/ios/iphonesimulator/*.app
-      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/Products/Release-iphonesimulator/*.app
-      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/Products/Release-iphonesimulator/*.app.zip
-    publishing:
-      email:
-        recipients:
-          - kong0820kong0820@gmail.com
+      - "*.zip"
+
+  ios-device-unsigned:
+    name: iOS Physical Device (For Sideloadly)
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      vars:
+        XCODE_WORKSPACE: "iosApp/iosApp.xcworkspace"
+        XCODE_SCHEME: "iosApp"
+      node: 20
+      java: 17
+      xcode: latest
+    scripts:
+      - name: Set execute permission
+        script: chmod +x gradlew
+      - name: Install Pods and Fix Assets
+        script: |
+          cd iosApp
+          rm -rf iosApp/Preview\ Content
+          sips -s format png --padToHeightWidth 1024 1024 "../androidApp/src/main/res/drawable/logo.png" --out "iosApp/Assets.xcassets/AppIcon.appiconset/app-icon-1024.png"
+          sips -s formatProperties '{"hasAlpha":false}' "iosApp/Assets.xcassets/AppIcon.appiconset/app-icon-1024.png"
+          cat <<EOF > iosApp/Assets.xcassets/AppIcon.appiconset/Contents.json
+          { "images": [ { "filename": "app-icon-1024.png", "idiom": "universal", "platform": "ios", "size": "1024x1024" } ], "info": { "author": "xcode", "version": 1 } }
+          EOF
+          cat <<EOF > Podfile
+          platform :ios, '15.0'
+          target 'iosApp' do
+            use_frameworks! :linkage => :static
+            pod 'FirebaseDatabase'
+            pod 'FirebaseCore'
+            pod 'FirebaseCoreInternal'
+            pod 'GoogleUtilities'
+          end
+          post_install do |installer|
+            installer.generated_projects.each { |p| p.targets.each { |t| t.build_configurations.each { |c| c.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'; c.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'; c.build_settings['DEFINES_MODULE'] = 'YES' } } }
+          end
+          EOF
+          pod install
+      - name: Build KMP Framework (Device)
+        script: ./gradlew :shared:linkReleaseFrameworkIosArm64
+      - name: Build iOS App (Device)
+        script: |
+          xcodebuild build -workspace "$XCODE_WORKSPACE" -scheme "$XCODE_SCHEME" -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
+      - name: Package IPA
+        script: |
+          APP_PATH=$(find $HOME/Library/Developer/Xcode/DerivedData -name "*.app" -type d | grep "Release-iphoneos" | head -n 1)
+          mkdir -p Payload
+          cp -R "$APP_PATH" Payload/
+          zip -qr TurfMobile_Device.ipa Payload
+    artifacts:
+      - "*.ipa"

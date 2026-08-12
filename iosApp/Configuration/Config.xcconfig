@@ -6,7 +6,11 @@ PRODUCT_BUNDLE_IDENTIFIER=com.xyz.netmobile.NetmobileIOS$(TEAM_ID)
 CURRENT_PROJECT_VERSION=5
 MARKETING_VERSION=5.0.0
 
-// 适配模拟器构建：指向 iosSimulatorArm64 目录
-FRAMEWORK_SEARCH_PATHS = $(inherited) "$(SRCROOT)/../shared/build/bin/iosSimulatorArm64/releaseFramework"
-OTHER_LDFLAGS = $(inherited) -framework Shared -ObjC
-SWIFT_INCLUDE_PATHS = $(inherited) "$(SRCROOT)/../shared/build/bin/iosSimulatorArm64/releaseFramework"
+// 自动根据 SDK 切换 KMP 框架搜索路径
+FRAMEWORK_SEARCH_PATHS[sdk=iphoneos*] = $(inherited) "$(SRCROOT)/../shared/build/bin/iosArm64/releaseFramework"
+FRAMEWORK_SEARCH_PATHS[sdk=iphonesimulator*] = $(inherited) "$(SRCROOT)/../shared/build/bin/iosSimulatorArm64/releaseFramework"
+
+OTHER_LDFLAGS = $(inherited) -framework Shared -ObjC -Wl,-ld64
+
+SWIFT_INCLUDE_PATHS[sdk=iphoneos*] = $(inherited) "$(SRCROOT)/../shared/build/bin/iosArm64/releaseFramework"
+SWIFT_INCLUDE_PATHS[sdk=iphonesimulator*] = $(inherited) "$(SRCROOT)/../shared/build/bin/iosSimulatorArm64/releaseFramework"
