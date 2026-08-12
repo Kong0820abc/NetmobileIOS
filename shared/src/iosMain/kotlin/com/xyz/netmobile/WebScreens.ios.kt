@@ -38,19 +38,14 @@ actual fun HorseScreen(
     val navigator = rememberWebViewNavigator()
     val platform = getPlatform()
 
-    // 针对马赛重播页面：进入时立即强制横屏，退出时恢复
-    LaunchedEffect(Unit) {
-        platform.setOrientation(true)
-    }
-
     DisposableEffect(Unit) {
         onDispose {
-            platform.setOrientation(false) // 退出时强制回竖屏
+            platform.setOrientation(false)
         }
     }
     
-    // 核心改进：当 URL 实际变化时，让 WebView 内部静默更新，而不是强制销毁重建
-    // 这样可以复用底层的 WKProcess 池，加载速度会快很多
+    state.webSettings.customUserAgentString = "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1"
+
     LaunchedEffect(targetUrl) {
         if (state.lastLoadedUrl != targetUrl) {
             navigator.loadUrl(targetUrl)
@@ -60,10 +55,11 @@ actual fun HorseScreen(
     WebScreenLayout(
         title = if (isEng) "Horse Racing" else "赛马信息",
         isEng = isEng,
-        onBack = { if (navigator.canGoBack) navigator.navigateBack() else onBack() },
+        onBack = onBack,
         onLanguageChange = onLanguageChange,
         state = state,
-        navigator = navigator
+        navigator = navigator,
+        targetUrl = targetUrl
     )
 }
 
@@ -80,26 +76,28 @@ actual fun HorseLiveScreen(
     val navigator = rememberWebViewNavigator()
     val platform = getPlatform()
 
-    // 针对马赛重播页面：进入时立即强制横屏，退出时恢复
-    LaunchedEffect(Unit) {
-        platform.setOrientation(true)
-    }
-
     DisposableEffect(Unit) {
         onDispose {
-            platform.setOrientation(false) // 退出时强制回竖屏
+            platform.setOrientation(false)
         }
     }
     
     state.webSettings.customUserAgentString = "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1"
 
+    LaunchedEffect(targetUrl) {
+        if (state.lastLoadedUrl != targetUrl) {
+            navigator.loadUrl(targetUrl)
+        }
+    }
+
     WebScreenLayout(
         title = if (isEng) "Horse Replay" else "马赛重播",
         isEng = isEng,
-        onBack = { if (navigator.canGoBack) navigator.navigateBack() else onBack() },
+        onBack = onBack,
         onLanguageChange = onLanguageChange,
         state = state,
-        navigator = navigator
+        navigator = navigator,
+        targetUrl = targetUrl
     )
 }
 
@@ -116,26 +114,28 @@ actual fun SoccerScoresScreen(
     val navigator = rememberWebViewNavigator()
     val platform = getPlatform()
 
-    // 针对马赛重播页面：进入时立即强制横屏，退出时恢复
-    LaunchedEffect(Unit) {
-        platform.setOrientation(true)
-    }
-
     DisposableEffect(Unit) {
         onDispose {
-            platform.setOrientation(false) // 退出时强制回竖屏
+            platform.setOrientation(false)
         }
     }
     
     state.webSettings.customUserAgentString = "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1"
 
+    LaunchedEffect(targetUrl) {
+        if (state.lastLoadedUrl != targetUrl) {
+            navigator.loadUrl(targetUrl)
+        }
+    }
+
     WebScreenLayout(
         title = if (isEng) "Soccer Scores" else "足球比分",
         isEng = isEng,
-        onBack = { if (navigator.canGoBack) navigator.navigateBack() else onBack() },
+        onBack = onBack,
         onLanguageChange = onLanguageChange,
         state = state,
-        navigator = navigator
+        navigator = navigator,
+        targetUrl = targetUrl
     )
 }
 
@@ -152,26 +152,28 @@ actual fun SoccerOddsScreen(
     val navigator = rememberWebViewNavigator()
     val platform = getPlatform()
 
-    // 针对马赛重播页面：进入时立即强制横屏，退出时恢复
-    LaunchedEffect(Unit) {
-        platform.setOrientation(true)
-    }
-
     DisposableEffect(Unit) {
         onDispose {
-            platform.setOrientation(false) // 退出时强制回竖屏
+            platform.setOrientation(false)
         }
     }
     
     state.webSettings.customUserAgentString = "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1"
 
+    LaunchedEffect(targetUrl) {
+        if (state.lastLoadedUrl != targetUrl) {
+            navigator.loadUrl(targetUrl)
+        }
+    }
+
     WebScreenLayout(
         title = if (isEng) "Soccer Odds" else "足球赔率",
         isEng = isEng,
-        onBack = { if (navigator.canGoBack) navigator.navigateBack() else onBack() },
+        onBack = onBack,
         onLanguageChange = onLanguageChange,
         state = state,
-        navigator = navigator
+        navigator = navigator,
+        targetUrl = targetUrl
     )
 }
 
@@ -188,26 +190,28 @@ actual fun LotteryScreen(
     val navigator = rememberWebViewNavigator()
     val platform = getPlatform()
 
-    // 针对马赛重播页面：进入时立即强制横屏，退出时恢复
-    LaunchedEffect(Unit) {
-        platform.setOrientation(true)
-    }
-
     DisposableEffect(Unit) {
         onDispose {
-            platform.setOrientation(false) // 退出时强制回竖屏
+            platform.setOrientation(false)
         }
     }
     
     state.webSettings.customUserAgentString = "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1"
 
+    LaunchedEffect(targetUrl) {
+        if (state.lastLoadedUrl != targetUrl) {
+            navigator.loadUrl(targetUrl)
+        }
+    }
+
     WebScreenLayout(
         title = if (isEng) "Lottery Results" else "开奖结果",
         isEng = isEng,
-        onBack = { if (navigator.canGoBack) navigator.navigateBack() else onBack() },
+        onBack = onBack,
         onLanguageChange = onLanguageChange,
         state = state,
-        navigator = navigator
+        navigator = navigator,
+        targetUrl = targetUrl
     )
 }
 
@@ -218,17 +222,18 @@ fun WebScreenLayout(
     onBack: () -> Unit,
     onLanguageChange: (String) -> Unit,
     state: WebViewState,
-    navigator: WebViewNavigator
+    navigator: WebViewNavigator,
+    targetUrl: String
 ) {
     val colorRed = Color(0xFFD32F2F)
     val colorYellow = Color(0xFFFFEB3B)
 
-    // 核心修复：监听内容变化（通常由语言切换引起），并清理历史记录
-    // 注意：ios 的 WebViewNavigator 本身没有 clearHistory，
-    // 我们通过在语言切换时“重置”状态来模拟清理，或者在返回逻辑中进行拦截。
+    // 规范化 URL 比较，防止末尾斜杠导致判断失败
+    val currentUrl = state.lastLoadedUrl?.removeSuffix("/") ?: ""
+    val normalizedTarget = targetUrl.removeSuffix("/")
     
-    // 我们定义一个基础 URL，如果当前 URL 等于基础 URL，则直接退出
-    val baseUrl = state.lastLoadedUrl ?: ""
+    // 如果当前已经是起始页，则认为是在“根部”
+    val isAtRoot = currentUrl == normalizedTarget || currentUrl.isEmpty()
 
     Column(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
         Box(
@@ -243,8 +248,8 @@ fun WebScreenLayout(
                 modifier = Modifier
                     .align(Alignment.CenterStart)
                     .clickable { 
-                        // 如果当前已经在该语言的首页面，则直接回主菜单
-                        if (!navigator.canGoBack) {
+                        // 智能返回逻辑：如果在首页面，直接退出到菜单
+                        if (isAtRoot || !navigator.canGoBack) {
                             onBack()
                         } else {
                             navigator.navigateBack()
@@ -300,13 +305,11 @@ fun WebScreenLayout(
                 label = "ContentAlpha"
             )
 
-    // 核心改进：当语言变化时，只更新标题
-    // 历史记录的清理交由顶部的返回按钮判断，而不是暴力销毁 WebView
-    WebView(
-        state = state,
-        navigator = navigator,
-        modifier = Modifier.fillMaxSize().graphicsLayer { alpha = contentAlpha }
-    )
+            WebView(
+                state = state,
+                navigator = navigator,
+                modifier = Modifier.fillMaxSize().graphicsLayer { alpha = contentAlpha }
+            )
 
             if (isWebLoading) {
                 CircularProgressIndicator(color = Color(0xFFD32F2F))
@@ -314,7 +317,6 @@ fun WebScreenLayout(
         }
     }
     
-    // 同步 Android 的 JS 注入逻辑 (针对视图缩放)
     if (state.loadingState is LoadingState.Finished) {
         val script = """
             (function() {
