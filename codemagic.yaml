@@ -16,10 +16,19 @@ workflows:
       - name: Fix Assets and Podfile
         script: |
           cd iosApp
-          # 1. 物理删除预览内容防止干扰
+          # 1. 彻底清理可能有干扰的文件夹
           rm -rf iosApp/Preview\ Content
           
-          # 2. 强制重写 AppIcon 的 Contents.json，消除所有多余的外观定义
+          # 2. 使用 macOS 内部工具 sips 强制处理图标（去除透明度、设为 1024x1024）
+          ICON_SRC="../androidApp/src/main/res/drawable/logo.png"
+          ICON_DEST="iosApp/Assets.xcassets/AppIcon.appiconset/app-icon-1024.png"
+          mkdir -p "$(dirname "$ICON_DEST")"
+          
+          # 转换：先转为不含 alpha 的真彩色 PNG，再强制缩放
+          sips -s format png --padToHeightWidth 1024 1024 "$ICON_SRC" --out "$ICON_DEST"
+          sips -s formatProperties '{"hasAlpha":false}' "$ICON_DEST"
+          
+          # 3. 强制重写极简 Contents.json
           cat <<EOF > iosApp/Assets.xcassets/AppIcon.appiconset/Contents.json
           {
             "images": [
@@ -34,7 +43,7 @@ workflows:
           }
           EOF
 
-          # 3. 生成 Podfile
+          # 4. 生成 Podfile
           cat <<EOF > Podfile
           platform :ios, '15.0'
           target 'iosApp' do
@@ -63,7 +72,7 @@ workflows:
       - name: Build iOS App
         script: |
           set -o pipefail
-          # 核心修复：ASSETCATALOG 相关的全部禁用标志，彻底绕过 Thinned 错误
+          # 核心修复：添加 ASSETCATALOG 优化控制，避开 Thinning 错误
           xcodebuild build -workspace "$XCODE_WORKSPACE" \
             -scheme "$XCODE_SCHEME" \
             -configuration Release \
@@ -73,19 +82,15 @@ workflows:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_IDENTITY="" \
             AD_HOC_CODE_SIGNING_ALLOWED=YES \
-            ENABLE_USER_SCRIPT_SANDBOXING=NO \
-            OTHER_LDFLAGS="\$(inherited) -ObjC -Wl,-ld64" \
             COMPILER_INDEX_STORE_ENABLE=NO \
-            ASSETCATALOG_COMPILER_GENERATE_ASSET_SYMBOLS=NO \
-            ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS=NO \
-            ASSETCATALOG_COMPILER_STANDALONE_ICON_BEHAVIOR=all \
-            ENABLE_ON_DEMAND_RESOURCES=NO \
-            STRIP_INSTALLED_PRODUCT=NO \
-            COPY_PHASE_STRIP=NO
+            OTHER_LDFLAGS="\$(inherited) -ObjC -Wl,-ld64" \
+            ASSETCATALOG_COMPILER_OPTIMIZATION=space \
+            ASSETCATALOG_COMPILER_GENERATE_ASSET_SYMBOLS=NO
     artifacts:
       - iosApp/build/ios/iphonesimulator/*.app
       - build/ios/iphonesimulator/*.app
       - $HOME/Library/Developer/Xcode/DerivedData/**/Build/Products/Release-iphonesimulator/*.app
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/Products/Release-iphonesimulator/*.app.zip
     publishing:
       email:
         recipients:
